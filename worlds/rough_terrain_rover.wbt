@@ -1,0 +1,282 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "../protos/RoughTerrainRover.proto"
+
+WorldInfo {
+  info [
+    "Four-Wheel Rough-Terrain Inspection Rover Project",
+    "Webots R2025a autonomous robotics demonstration"
+  ]
+  title "Rough-Terrain Inspection Rover Simulation"
+  coordinateSystem "NUE"
+  gravity 0 -9.81 0
+  basicTimeStep 16
+  contactProperties [
+    ContactProperties {
+      material1 "rubber"
+      material2 "default"
+      coulombFriction [
+        1.2
+      ]
+    }
+    ContactProperties {
+      material1 "chassis"
+      material2 "default"
+      coulombFriction [
+        0.3
+      ]
+    }
+  ]
+}
+Viewpoint {
+  orientation 0.22 0.94 -0.24 2.35
+  position -2.8 2.2 2.6
+  follow "rough_terrain_rover"
+}
+Background {
+  skyColor [
+    0.22 0.32 0.46
+  ]
+}
+DirectionalLight {
+  direction 0.6 -1.0 -0.5
+  intensity 1.2
+  castShadows TRUE
+}
+DirectionalLight {
+  direction -0.6 -0.8 0.5
+  intensity 0.5
+}
+
+# ==============================================================================
+# ARENA FLOOR (Flat testing ground)
+# ==============================================================================
+DEF ARENA_GROUND Solid {
+  translation 0 -0.1 0
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.24 0.26 0.28
+        roughness 0.85
+        metalness 0.1
+      }
+      geometry Box {
+        size 16 0.2 16
+      }
+    }
+  ]
+  boundingObject Box {
+    size 16 0.2 16
+  }
+}
+
+# ==============================================================================
+# PERIMETER WALLS (Keep rover inside testing ground)
+# ==============================================================================
+DEF NORTH_WALL Solid {
+  translation 5.5 0.15 0.0
+  children [
+    Shape {
+      appearance DEF WALL_APP PBRAppearance {
+        baseColor 0.18 0.20 0.22
+        roughness 0.7
+      }
+      geometry Box {
+        size 0.2 0.3 9.0
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.2 0.3 9.0
+  }
+}
+DEF SOUTH_WALL Solid {
+  translation -3.5 0.15 0.0
+  children [
+    Shape {
+      appearance USE WALL_APP
+      geometry Box {
+        size 0.2 0.3 9.0
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.2 0.3 9.0
+  }
+}
+DEF EAST_WALL Solid {
+  translation 1.0 0.15 4.5
+  children [
+    Shape {
+      appearance USE WALL_APP
+      geometry Box {
+        size 9.2 0.3 0.2
+      }
+    }
+  ]
+  boundingObject Box {
+    size 9.2 0.3 0.2
+  }
+}
+DEF WEST_WALL Solid {
+  translation 1.0 0.15 -4.5
+  children [
+    Shape {
+      appearance USE WALL_APP
+      geometry Box {
+        size 9.2 0.3 0.2
+      }
+    }
+  ]
+  boundingObject Box {
+    size 9.2 0.3 0.2
+  }
+}
+
+# ==============================================================================
+# PRIMARY OBSTACLE (Directly on initial forward path at X = 1.5 m)
+# ==============================================================================
+DEF PRIMARY_OBSTACLE Solid {
+  translation 1.5 0.15 0.0
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.85 0.42 0.12
+        roughness 0.6
+        metalness 0.2
+      }
+      geometry Box {
+        size 0.40 0.30 0.30
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.40 0.30 0.30
+  }
+}
+
+# ==============================================================================
+# SECONDARY OBSTACLE (Offset to the right side at X = 2.2 m, Z = -0.8 m)
+# ==============================================================================
+DEF SECONDARY_OBSTACLE Solid {
+  translation 2.2 0.20 -0.80
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.20 0.35 0.55
+        roughness 0.5
+        metalness 0.4
+      }
+      geometry Box {
+        size 0.45 0.40 0.45
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.45 0.40 0.45
+  }
+}
+
+# ==============================================================================
+# ROUGH-TERRAIN ROCK FORMATIONS (Low polygonal terrain slabs)
+# ==============================================================================
+DEF ROCK_1 Solid {
+  translation 2.8 0.04 0.9
+  rotation 0.3 1 0.2 0.6
+  children [
+    Shape {
+      appearance DEF ROCK_APP PBRAppearance {
+        baseColor 0.42 0.40 0.38
+        roughness 0.9
+        metalness 0.05
+      }
+      geometry Box {
+        size 0.38 0.08 0.32
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.38 0.08 0.32
+  }
+}
+DEF ROCK_2 Solid {
+  translation 3.2 0.035 1.4
+  rotation -0.2 1 0.4 1.1
+  children [
+    Shape {
+      appearance USE ROCK_APP
+      geometry Box {
+        size 0.30 0.07 0.28
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.30 0.07 0.28
+  }
+}
+DEF ROCK_3 Solid {
+  translation 2.4 0.045 1.6
+  rotation 0.1 1 -0.3 0.8
+  children [
+    Shape {
+      appearance USE ROCK_APP
+      geometry Box {
+        size 0.35 0.09 0.30
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.35 0.09 0.30
+  }
+}
+
+# ==============================================================================
+# GENTLE TERRAIN RAMP / SLOPE (Incline of ~8.5 degrees)
+# ==============================================================================
+DEF TERRAIN_RAMP Solid {
+  translation 3.8 0.12 -1.4
+  rotation 0 0 1 0.15
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.32 0.34 0.38
+        roughness 0.45
+        metalness 0.55
+      }
+      geometry Box {
+        size 1.6 0.08 0.8
+      }
+    }
+  ]
+  boundingObject Box {
+    size 1.6 0.08 0.8
+  }
+}
+DEF RAMP_PLATFORM Solid {
+  translation 4.7 0.20 -1.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.28 0.30 0.34
+        roughness 0.5
+        metalness 0.5
+      }
+      geometry Box {
+        size 0.6 0.40 0.8
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.6 0.40 0.8
+  }
+}
+
+# ==============================================================================
+# ROUGH-TERRAIN INSPECTION ROVER INSTANCE
+# ==============================================================================
+RoughTerrainRover {
+  translation 0 0.076 0
+  rotation 0 1 0 0
+  name "rough_terrain_rover"
+  controller "rough_terrain_controller"
+}

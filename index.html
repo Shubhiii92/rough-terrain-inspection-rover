@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rough-Terrain Inspection Rover | Webots R2025a Simulation</title>
+  <meta name="description" content="Live 3D Webots R2025a Rough-Terrain Inspection Rover Simulation with 4-wheel kinematics, autonomous obstacle avoidance FSM, sensor raycasting, and telemetry dashboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0d14;
+      --panel-bg: rgba(16, 22, 34, 0.75);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --panel-glow: rgba(0, 210, 255, 0.15);
+      --accent-cyan: #00d2ff;
+      --accent-yellow: #f59e0b;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      font-family: var(--font-ui);
+      color: var(--text-main);
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369a1, #075985);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-color: #fbbf24;
+      color: #0f172a;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Left Telemetry Panel */
+    .telemetry-panel {
+      position: absolute;
+      top: 86px;
+      left: 20px;
+      width: 320px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .glass-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      pointer-events: auto;
+    }
+
+    .card-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .state-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-green);
+      letter-spacing: 0.5px;
+      transition: all 0.25s ease;
+    }
+
+    .state-badge.state-avoiding {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: var(--accent-yellow);
+    }
+
+    .state-badge.state-reverse {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--accent-red);
+    }
+
+    /* Sensor Gauges */
+    .sensor-item {
+      margin-bottom: 10px;
+    }
+
+    .sensor-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .sensor-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+
+    .sensor-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .sensor-val {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981, #00d2ff);
+      border-radius: 4px;
+      transition: width 0.1s linear, background 0.2s ease;
+    }
+
+    .progress-bar-fill.danger {
+      background: linear-gradient(90deg, #ef4444, #f59e0b);
+    }
+
+    /* Telemetry Grid */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .metric-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .metric-box-title {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .metric-box-val {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Right Bottom Log Console */
+    .log-panel {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 380px;
+      height: 210px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .log-content {
+      flex: 1;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      line-height: 1.5;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .log-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .log-line {
+      color: #cbd5e1;
+      word-break: break-all;
+    }
+
+    .log-line.info { color: #38bdf8; }
+    .log-line.warn { color: #fbbf24; }
+    .log-line.danger { color: #f87171; }
+    .log-line.success { color: #4ade80; }
+
+    /* Bottom Control Bar */
+    .bottom-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 10px 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .mode-btn {
+      padding: 6px 14px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .cam-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .cam-btn {
+      padding: 6px 10px;
+      font-size: 0.74rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cam-btn.active {
+      background: var(--accent-cyan);
+      color: #04121d;
+      border-color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* Reticle for FPV */
+    #fpv-reticle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+    }
+
+    /* Modal for Code Inspection */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 15, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      width: 900px;
+      max-width: 95vw;
+      height: 640px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .modal-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .modal-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #090e1a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: var(--accent-cyan);
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      background: #060911;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #94a3b8;
+    }
+
+    pre code {
+      color: #e2e8f0;
+      font-family: inherit;
+    }
+
+    /* Manual Control D-Pad overlay */
+    .dpad-container {
+      position: absolute;
+      bottom: 90px;
+      left: 20px;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .dpad-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dpad-btn {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .dpad-btn:active {
+      background: var(--accent-cyan);
+      color: #000;
+      transform: scale(0.95);
+    }
+  </style>
+
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <!-- WebGL 3D Simulation Canvas -->
+  <div id="canvas-container"></div>
+
+  <!-- FPV Reticle (shown in mast camera mode) -->
+  <svg id="fpv-reticle" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(0, 210, 255, 0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <circle cx="50" cy="50" r="3" fill="#00d2ff"/>
+    <line x1="15" y1="50" x2="35" y2="50" stroke="#00d2ff" stroke-width="1.5"/>
+    <line x1="65" y1="50" x2="85" y2="50" stroke="#00d2ff" stroke-width="1.5"/>
+    <line x1="50" y1="15" x2="50" y2="35" stroke="#00d2ff" stroke-width="1.5"/>
+    <line x1="50" y1="65" x2="50" y2="85" stroke="#00d2ff" stroke-width="1.5"/>
+    <text x="50" y="92" font-size="6" fill="#00d2ff" text-anchor="middle" font-family="'JetBrains Mono', monospace">MAST-CAM 1080p</text>
+  </svg>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🤖</div>
+      <div class="brand-text">
+        <h1>ROUGH-TERRAIN INSPECTION ROVER</h1>
+        <p><span class="live-dot"></span> Webots R2025a Project &bull; 4-Wheel Differential Drive</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button class="btn" id="btn-open-files" title="Inspect PROTO, Controller & World files">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Inspect Source Files
+      </button>
+      <a class="btn btn-primary" href="RoughTerrainRover_Webots_R2025a.zip" download="RoughTerrainRover_Webots_R2025a.zip" title="Download entire Webots project ZIP">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Download Project ZIP
+      </a>
+    </div>
+  </header>
+
+  <!-- Left Telemetry & State Panel -->
+  <div class="telemetry-panel">
+    <div class="glass-card">
+      <div class="card-title">
+        <span>FSM AUTONOMOUS CONTROLLER</span>
+        <span class="state-badge" id="fsm-badge">FORWARD</span>
+      </div>
+
+      <!-- Distance Sensors with calibrated piecewise range -->
+      <div class="sensor-item">
+        <div class="sensor-header">
+          <span class="sensor-label">FRONT-LEFT SENSOR [ds_left]</span>
+          <span class="sensor-val" id="val-ds-left">1.95 m (30 ADC)</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="bar-ds-left" style="width: 95%;"></div>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header">
+          <span class="sensor-label">FRONT-CENTER SENSOR [ds_center]</span>
+          <span class="sensor-val" id="val-ds-center">1.80 m (80 ADC)</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="bar-ds-center" style="width: 90%;"></div>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header">
+          <span class="sensor-label">FRONT-RIGHT SENSOR [ds_right]</span>
+          <span class="sensor-val" id="val-ds-right">1.92 m (40 ADC)</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="bar-ds-right" style="width: 94%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rover Kinematics & Motor Velocities -->
+    <div class="glass-card">
+      <div class="card-title">
+        <span>4-WHEEL DRIVE KINEMATICS</span>
+        <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-cyan);" id="rover-speed-indicator">0.42 m/s</span>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="metric-box-title">FL MOTOR</div>
+          <div class="metric-box-val" id="val-mot-fl">+6.0 rad/s</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-box-title">FR MOTOR</div>
+          <div class="metric-box-val" id="val-mot-fr">+6.0 rad/s</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-box-title">RL MOTOR</div>
+          <div class="metric-box-val" id="val-mot-rl">+6.0 rad/s</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-box-title">RR MOTOR</div>
+          <div class="metric-box-val" id="val-mot-rr">+6.0 rad/s</div>
+        </div>
+      </div>
+      <div class="metric-grid" style="margin-top: 10px;">
+        <div class="metric-box">
+          <div class="metric-box-title">IMU PITCH</div>
+          <div class="metric-box-val" id="val-pitch">+1.2&deg;</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-box-title">IMU ROLL</div>
+          <div class="metric-box-val" id="val-roll">-0.6&deg;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Drive D-Pad (only when Manual Mode is active) -->
+  <div class="dpad-container" id="dpad-controls">
+    <div class="dpad-row">
+      <button class="dpad-btn" id="dpad-up" title="Drive Forward">&uarr;</button>
+    </div>
+    <div class="dpad-row">
+      <button class="dpad-btn" id="dpad-left" title="Turn Left">&larr;</button>
+      <button class="dpad-btn" id="dpad-down" title="Reverse">&darr;</button>
+      <button class="dpad-btn" id="dpad-right" title="Turn Right">&rarr;</button>
+    </div>
+    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-align: center;">WASD or Arrows</div>
+  </div>
+
+  <!-- Bottom Navigation & Controls Bar -->
+  <div class="bottom-bar">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-auto">Autonomous AI</button>
+      <button class="mode-btn" id="mode-manual">Manual Drive</button>
+    </div>
+
+    <div style="width: 1px; height: 22px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+
+    <div class="cam-btn-group">
+      <button class="cam-btn active" id="cam-chase">Follow Cam</button>
+      <button class="cam-btn" id="cam-orbit">Orbit 360&deg;</button>
+      <button class="cam-btn" id="cam-fpv">Mast FPV</button>
+      <button class="cam-btn" id="cam-top">Top Down</button>
+    </div>
+
+    <div style="width: 1px; height: 22px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+
+    <button class="btn" id="btn-reset-rover" title="Reset Rover Position to Start">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      Reset
+    </button>
+    <button class="btn" id="btn-toggle-rays" title="Toggle Visible Sensor Rays">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Sensor Rays
+    </button>
+  </div>
+
+  <!-- Bottom-Right Live Event Logs Panel -->
+  <div class="log-panel glass-card">
+    <div class="card-title">
+      <span>ROVER CONTROLLER LOG</span>
+      <span style="font-size: 0.68rem; color: var(--accent-green);">32ms Cycle</span>
+    </div>
+    <div class="log-content" id="log-stream">
+      <div class="log-line info">[00:00.00] System initialized. Webots R2025a Python FSM active.</div>
+      <div class="log-line info">[00:00.01] Calibrated DistanceSensor lookup tables loaded.</div>
+      <div class="log-line success">[00:00.02] Motors configured: fl_motor, fr_motor, rl_motor, rr_motor.</div>
+    </div>
+  </div>
+
+  <!-- Source Code & Files Modal -->
+  <div class="modal-overlay" id="files-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Webots Project Files & Inspection</div>
+        <button class="btn" id="btn-close-modal" style="padding: 4px 10px;">&times; Close</button>
+      </div>
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-file="controller">rough_terrain_controller.py</button>
+        <button class="tab-btn" data-file="proto">RoughTerrainRover.proto</button>
+        <button class="tab-btn" data-file="world">rough_terrain_rover.wbt</button>
+        <button class="tab-btn" data-file="testplan">simulation_test_plan.md</button>
+        <button class="tab-btn" data-file="readme">README.md</button>
+      </div>
+      <div class="modal-body" id="modal-code-viewer">
+        <pre><code id="code-display">Loading...</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       THREE.JS 3D SIMULATION SETUP
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0f1d);
+    scene.fog = new THREE.FogExp2(0x0a0f1d, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 150);
+    camera.position.set(0, 3.5, 6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.02; // prevent below ground
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.6);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfff5ea, 1.3);
+    sunLight.position.set(15, 25, 12);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 60;
+    sunLight.shadow.camera.left = -18;
+    sunLight.shadow.camera.right = 18;
+    sunLight.shadow.camera.top = 18;
+    sunLight.shadow.camera.bottom = -18;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+    fillLight.position.set(-15, 10, -10);
+    scene.add(fillLight);
+
+    /* =========================================================================
+       PROCEDURAL ROUGH TERRAIN & OBSTACLES
+       ========================================================================= */
+    const terrainSize = 50;
+    const terrainSegments = 80;
+    const terrainGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    const posAttr = terrainGeo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i);
+      const z = posAttr.getZ(i);
+      // Rough terrain height function (gentle undulations + small bumps, flat at spawn 0,0)
+      const distFromOrigin = Math.sqrt(x * x + z * z);
+      if (distFromOrigin > 2.0) {
+        const height = Math.sin(x * 0.45) * Math.cos(z * 0.45) * 0.35 +
+                       Math.sin(x * 1.2 + z * 0.8) * 0.12;
+        posAttr.setY(i, height);
+      } else {
+        posAttr.setY(i, 0.0);
+      }
+    }
+    terrainGeo.computeVertexNormals();
+
+    // Terrain Material with grid + ground texture styling
+    const canvasTexture = document.createElement('canvas');
+    canvasTexture.width = 512;
+    canvasTexture.height = 512;
+    const ctx = canvasTexture.getContext('2d');
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, 512, 512);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.lineWidth = 2;
+    for (let k = 0; k <= 512; k += 32) {
+      ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k, 512); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, k); ctx.lineTo(512, k); ctx.stroke();
+    }
+    // Add noise specks
+    for (let s = 0; s < 3000; s++) {
+      const nx = Math.random() * 512;
+      const ny = Math.random() * 512;
+      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(nx, ny, 2, 2);
+    }
+    const groundTex = new THREE.CanvasTexture(canvasTexture);
+    groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
+    groundTex.repeat.set(12, 12);
+
+    const terrainMat = new THREE.MeshStandardMaterial({
+      map: groundTex,
+      roughness: 0.85,
+      metalness: 0.15,
+      flatShading: true
+    });
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.receiveShadow = true;
+    scene.add(terrainMesh);
+
+    // Obstacles / Rocks Array for Collision & Distance Sensing
+    const obstacles = [];
+    const obstacleGeos = [
+      new THREE.DodecahedronGeometry(0.38, 1),
+      new THREE.DodecahedronGeometry(0.55, 1),
+      new THREE.BoxGeometry(0.8, 0.4, 0.8),
+      new THREE.CylinderGeometry(0.35, 0.45, 0.6, 7)
+    ];
+
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      roughness: 0.9,
+      metalness: 0.1,
+      flatShading: true
+    });
+
+    const rockPositions = [
+      { x: 0.0, z: 2.8, s: 1.1 },
+      { x: 1.8, z: 4.5, s: 1.3 },
+      { x: -2.2, z: 3.8, s: 1.0 },
+      { x: -0.8, z: 6.8, s: 1.4 },
+      { x: 2.5, z: 7.5, s: 1.2 },
+      { x: -3.0, z: 9.0, s: 1.5 },
+      { x: 1.0, z: 10.5, s: 1.3 },
+      { x: -1.5, z: 12.0, s: 1.2 },
+      { x: 3.2, z: 13.0, s: 1.6 },
+      { x: 0.0, z: 14.5, s: 1.4 },
+      { x: -3.5, z: 15.8, s: 1.2 },
+      { x: 2.0, z: 17.5, s: 1.5 },
+      { x: -1.0, z: 19.0, s: 1.3 },
+      // Side boundary barriers
+      { x: 5.5, z: 3.0, s: 1.8 }, { x: 5.5, z: 7.0, s: 1.8 }, { x: 5.5, z: 11.0, s: 1.8 }, { x: 5.5, z: 15.0, s: 1.8 },
+      { x: -5.5, z: 3.0, s: 1.8 }, { x: -5.5, z: 7.0, s: 1.8 }, { x: -5.5, z: 11.0, s: 1.8 }, { x: -5.5, z: 15.0, s: 1.8 }
+    ];
+
+    rockPositions.forEach((p, idx) => {
+      const geo = obstacleGeos[idx % obstacleGeos.length];
+      const rock = new THREE.Mesh(geo, rockMat);
+      rock.position.set(p.x, 0.25 * p.s, p.z);
+      rock.scale.set(p.s, p.s * (0.8 + Math.random() * 0.4), p.s);
+      rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      scene.add(rock);
+      obstacles.push({
+        mesh: rock,
+        x: p.x,
+        z: p.z,
+        radius: 0.45 * p.s
+      });
+    });
+
+    /* =========================================================================
+       ROVER 3D MODEL HIERARCHY
+       ========================================================================= */
+    const roverGroup = new THREE.Group();
+    scene.add(roverGroup);
+
+    // Chassis specs: 0.50m (L) x 0.30m (W) x 0.15m (H)
+    const chassisGeo = new THREE.BoxGeometry(0.30, 0.15, 0.50);
+    const chassisMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.6,
+      roughness: 0.35
+    });
+    const chassisMesh = new THREE.Mesh(chassisGeo, chassisMat);
+    chassisMesh.position.y = 0.20;
+    chassisMesh.castShadow = true;
+    roverGroup.add(chassisMesh);
+
+    // Hazard yellow top stripes
+    const stripeGeo = new THREE.BoxGeometry(0.28, 0.02, 0.48);
+    const stripeMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.3,
+      metalness: 0.4
+    });
+    const stripeMesh = new THREE.Mesh(stripeGeo, stripeMat);
+    stripeMesh.position.y = 0.28;
+    stripeMesh.castShadow = true;
+    roverGroup.add(stripeMesh);
+
+    // Sensor Mast
+    const mastColumnGeo = new THREE.CylinderGeometry(0.018, 0.022, 0.24, 16);
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.2 });
+    const mastColumn = new THREE.Mesh(mastColumnGeo, metalMat);
+    mastColumn.position.set(0, 0.40, 0.10);
+    mastColumn.castShadow = true;
+    roverGroup.add(mastColumn);
+
+    // Rotating LiDAR Scanner head
+    const lidarHeadGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.05, 16);
+    const lidarHeadMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
+    const lidarHead = new THREE.Mesh(lidarHeadGeo, lidarHeadMat);
+    lidarHead.position.set(0, 0.53, 0.10);
+    lidarHead.castShadow = true;
+    roverGroup.add(lidarHead);
+
+    // Dual Stereo Cameras on mast
+    const camHousingGeo = new THREE.BoxGeometry(0.09, 0.035, 0.04);
+    const camHousing = new THREE.Mesh(camHousingGeo, metalMat);
+    camHousing.position.set(0, 0.46, 0.12);
+    roverGroup.add(camHousing);
+
+    // 4 Wheels: Rims & Tires (0.10m radius, 0.06m width)
+    const wheelGeo = new THREE.CylinderGeometry(0.10, 0.10, 0.06, 24);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const tireMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.9,
+      metalness: 0.1
+    });
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.4,
+      metalness: 0.6
+    });
+
+    const wheels = [];
+    const wheelOffsets = [
+      { name: 'FL', x: -0.21, y: 0.10, z: 0.16 },
+      { name: 'FR', x:  0.21, y: 0.10, z: 0.16 },
+      { name: 'RL', x: -0.21, y: 0.10, z: -0.16 },
+      { name: 'RR', x:  0.21, y: 0.10, z: -0.16 }
+    ];
+
+    wheelOffsets.forEach(cfg => {
+      const wheelGroup = new THREE.Group();
+      wheelGroup.position.set(cfg.x, cfg.y, cfg.z);
+
+      const tire = new THREE.Mesh(wheelGeo, tireMat);
+      tire.castShadow = true;
+      wheelGroup.add(tire);
+
+      const rimGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.064, 12);
+      rimGeo.rotateZ(Math.PI / 2);
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      wheelGroup.add(rim);
+
+      roverGroup.add(wheelGroup);
+      wheels.push({ group: wheelGroup, name: cfg.name, tireMesh: tire });
+    });
+
+    // Sensor Ray Beams (Left, Center, Right)
+    const sensorRaysGroup = new THREE.Group();
+    roverGroup.add(sensorRaysGroup);
+
+    function createSensorRay(angleY) {
+      const rayLen = 2.0; // 2.0 meters max range
+      const rayGeo = new THREE.CylinderGeometry(0.005, 0.015, rayLen, 8);
+      rayGeo.rotateX(Math.PI / 2);
+      rayGeo.translate(0, 0, rayLen / 2);
+
+      const rayMat = new THREE.MeshBasicMaterial({
+        color: 0x00d2ff,
+        transparent: true,
+        opacity: 0.45,
+        wireframe: false
+      });
+      const rayMesh = new THREE.Mesh(rayGeo, rayMat);
+      rayMesh.position.set(0, 0.20, 0.25);
+      rayMesh.rotation.y = angleY;
+      sensorRaysGroup.add(rayMesh);
+      return { mesh: rayMesh, mat: rayMat, angle: angleY };
+    }
+
+    const sensorRays = {
+      left: createSensorRay(0.436),   // +25 deg
+      center: createSensorRay(0.0),    // 0 deg
+      right: createSensorRay(-0.436)  // -25 deg
+    };
+
+    /* =========================================================================
+       ROVER SIMULATION DYNAMICS & PYTHON FSM LOGIC
+       ========================================================================= */
+    const rover = {
+      x: 0,
+      z: 0,
+      heading: 0, // radians
+      linearSpeed: 0,
+      angularSpeed: 0,
+      state: 'FORWARD',
+      autonomous: true,
+      cameraMode: 'chase',
+      turnDirection: 'left',
+      turnTimer: 0,
+      reverseTimer: 0,
+      recoverTimer: 0,
+      // Distances in meters
+      distLeft: 2.0,
+      distCenter: 2.0,
+      distRight: 2.0,
+      // Wheel velocities (rad/s)
+      wFL: 0, wFR: 0, wRL: 0, wRR: 0,
+      // Keys state
+      keys: { w: false, a: false, s: false, d: false }
+    };
+
+    // Sensor Lookup Table (from Webots RoughTerrainRover.proto)
+    // distance -> ADC signal
+    function distToADC(dist) {
+      const clamped = Math.max(0, Math.min(2.0, dist));
+      if (clamped <= 0.3) {
+        return Math.round(1000 - (clamped / 0.3) * (1000 - 850));
+      } else if (clamped <= 1.0) {
+        return Math.round(850 - ((clamped - 0.3) / 0.7) * (850 - 500));
+      } else {
+        return Math.round(500 - ((clamped - 1.0) / 1.0) * 500);
+      }
+    }
+
+    // Raycast distance from sensor to obstacles
+    function measureDistance(sensorAngle) {
+      const totalAngle = rover.heading + sensorAngle;
+      const originX = rover.x + Math.sin(rover.heading) * 0.25;
+      const originZ = rover.z + Math.cos(rover.heading) * 0.25;
+      const dirX = Math.sin(totalAngle);
+      const dirZ = Math.cos(totalAngle);
+
+      let minDistance = 2.0; // max sensor range 2.0m
+
+      obstacles.forEach(obs => {
+        // Line-circle intersection
+        const dx = obs.x - originX;
+        const dz = obs.z - originZ;
+        const proj = dx * dirX + dz * dirZ;
+        if (proj > 0 && proj < minDistance) {
+          const perpDistSq = (dx * dx + dz * dz) - (proj * proj);
+          if (perpDistSq <= obs.radius * obs.radius) {
+            const hitDist = Math.max(0.05, proj - Math.sqrt(Math.max(0, obs.radius * obs.radius - perpDistSq)));
+            if (hitDist < minDistance) {
+              minDistance = hitDist;
+            }
+          }
+        }
+      });
+
+      return minDistance;
+    }
+
+    // FSM Update (matches Python rough_terrain_controller.py)
+    const MAX_SPEED = 6.0; // rad/s
+    const TURN_SPEED = 4.2;
+    const OBSTACLE_THRESHOLD = 0.38; // m
+    const CRITICAL_DISTANCE = 0.18;  // m
+
+    function updateFSM(dt) {
+      // 1. Measure sensor distances
+      rover.distLeft = measureDistance(0.436);
+      rover.distCenter = measureDistance(0.0);
+      rover.distRight = measureDistance(-0.436);
+
+      if (rover.autonomous) {
+        switch (rover.state) {
+          case 'FORWARD':
+            // Cruise forward
+            rover.linearSpeed = 0.38;
+            rover.angularSpeed = 0.0;
+            rover.wFL = MAX_SPEED; rover.wFR = MAX_SPEED;
+            rover.wRL = MAX_SPEED; rover.wRR = MAX_SPEED;
+
+            // Check obstacle triggers
+            if (rover.distCenter < CRITICAL_DISTANCE || rover.distLeft < CRITICAL_DISTANCE || rover.distRight < CRITICAL_DISTANCE) {
+              rover.state = 'REVERSE';
+              rover.reverseTimer = 1.4;
+              addLog(`[WARN] Critical proximity (<${CRITICAL_DISTANCE}m)! Reversing.`, 'danger');
+            } else if (rover.distCenter < OBSTACLE_THRESHOLD || rover.distLeft < OBSTACLE_THRESHOLD || rover.distRight < OBSTACLE_THRESHOLD) {
+              // Determine best direction to turn
+              if (rover.distLeft > rover.distRight) {
+                rover.state = 'TURN_LEFT';
+                rover.turnTimer = 0.9 + Math.random() * 0.4;
+                addLog(`[ACTION] Obstacle detected! Turning LEFT (clearance L=${rover.distLeft.toFixed(2)}m > R=${rover.distRight.toFixed(2)}m)`, 'warn');
+              } else {
+                rover.state = 'TURN_RIGHT';
+                rover.turnTimer = 0.9 + Math.random() * 0.4;
+                addLog(`[ACTION] Obstacle detected! Turning RIGHT (clearance R=${rover.distRight.toFixed(2)}m > L=${rover.distLeft.toFixed(2)}m)`, 'warn');
+              }
+            }
+            break;
+
+          case 'TURN_LEFT':
+            rover.linearSpeed = 0.05;
+            rover.angularSpeed = 1.6;
+            rover.wFL = -TURN_SPEED; rover.wRL = -TURN_SPEED;
+            rover.wFR =  TURN_SPEED; rover.wRR =  TURN_SPEED;
+            rover.turnTimer -= dt;
+            if (rover.turnTimer <= 0 && rover.distCenter > OBSTACLE_THRESHOLD) {
+              rover.state = 'FORWARD';
+              addLog(`[STATE] Path clear. Resuming FORWARD cruise.`, 'success');
+            }
+            break;
+
+          case 'TURN_RIGHT':
+            rover.linearSpeed = 0.05;
+            rover.angularSpeed = -1.6;
+            rover.wFL =  TURN_SPEED; rover.wRL =  TURN_SPEED;
+            rover.wFR = -TURN_SPEED; rover.wRR = -TURN_SPEED;
+            rover.turnTimer -= dt;
+            if (rover.turnTimer <= 0 && rover.distCenter > OBSTACLE_THRESHOLD) {
+              rover.state = 'FORWARD';
+              addLog(`[STATE] Path clear. Resuming FORWARD cruise.`, 'success');
+            }
+            break;
+
+          case 'REVERSE':
+            rover.linearSpeed = -0.25;
+            rover.angularSpeed = 0.3;
+            rover.wFL = -MAX_SPEED * 0.7; rover.wRL = -MAX_SPEED * 0.7;
+            rover.wFR = -MAX_SPEED * 0.7; rover.wRR = -MAX_SPEED * 0.7;
+            rover.reverseTimer -= dt;
+            if (rover.reverseTimer <= 0) {
+              rover.state = (rover.distLeft > rover.distRight) ? 'TURN_LEFT' : 'TURN_RIGHT';
+              rover.turnTimer = 1.0;
+              addLog(`[STATE] Reverse maneuver finished. Turning away.`, 'info');
+            }
+            break;
+        }
+      } else {
+        // Manual Teleoperation
+        let targetLin = 0;
+        let targetAng = 0;
+        if (rover.keys.w) targetLin += 0.40;
+        if (rover.keys.s) targetLin -= 0.30;
+        if (rover.keys.a) targetAng += 1.8;
+        if (rover.keys.d) targetAng -= 1.8;
+
+        rover.linearSpeed = targetLin;
+        rover.angularSpeed = targetAng;
+        rover.wFL = (targetLin * 15) - (targetAng * 2.5);
+        rover.wRL = rover.wFL;
+        rover.wFR = (targetLin * 15) + (targetAng * 2.5);
+        rover.wRR = rover.wFR;
+
+        rover.state = (targetLin > 0) ? 'MANUAL_FWD' : (targetLin < 0) ? 'MANUAL_REV' : (targetAng !== 0) ? 'MANUAL_STEER' : 'MANUAL_IDLE';
+      }
+
+      // Update Kinematic Position
+      rover.heading += rover.angularSpeed * dt;
+      rover.x += Math.sin(rover.heading) * rover.linearSpeed * dt;
+      rover.z += Math.cos(rover.heading) * rover.linearSpeed * dt;
+
+      // Soft clamp inside terrain area
+      rover.x = Math.max(-18, Math.min(18, rover.x));
+      rover.z = Math.max(-18, Math.min(18, rover.z));
+
+      // Update 3D Rover Model
+      roverGroup.position.x = rover.x;
+      roverGroup.position.z = rover.z;
+      roverGroup.rotation.y = rover.heading;
+
+      // Simulated IMU Pitch/Roll based on speed and undulations
+      const pitch = (rover.linearSpeed * 0.08 + Math.sin(rover.z * 0.8) * 0.04);
+      const roll = (rover.angularSpeed * -0.04 + Math.cos(rover.x * 0.8) * 0.03);
+      roverGroup.rotation.x = pitch;
+      roverGroup.rotation.z = roll;
+
+      // Rotate wheels
+      const wheelRotDelta = rover.linearSpeed * dt * 10;
+      wheels.forEach(w => {
+        w.tireMesh.rotation.x += wheelRotDelta;
+      });
+
+      // Spin LiDAR
+      lidarHead.rotation.y += 0.15;
+
+      // Update visual sensor rays
+      updateRayVisuals();
+    }
+
+    function updateRayVisuals() {
+      const updateSingleRay = (rayObj, dist) => {
+        const scaleZ = dist / 2.0;
+        rayObj.mesh.scale.set(1, 1, scaleZ);
+        if (dist < OBSTACLE_THRESHOLD) {
+          rayObj.mat.color.setHex(0xef4444);
+          rayObj.mat.opacity = 0.8;
+        } else {
+          rayObj.mat.color.setHex(0x00d2ff);
+          rayObj.mat.opacity = 0.35;
+        }
+      };
+
+      updateSingleRay(sensorRays.left, rover.distLeft);
+      updateSingleRay(sensorRays.center, rover.distCenter);
+      updateSingleRay(sensorRays.right, rover.distRight);
+    }
+
+    /* =========================================================================
+       UI TELEMETRY BINDINGS & LOGGING
+       ========================================================================= */
+    const fsmBadge = document.getElementById('fsm-badge');
+    const valDsLeft = document.getElementById('val-ds-left');
+    const valDsCenter = document.getElementById('val-ds-center');
+    const valDsRight = document.getElementById('val-ds-right');
+    const barDsLeft = document.getElementById('bar-ds-left');
+    const barDsCenter = document.getElementById('bar-ds-center');
+    const barDsRight = document.getElementById('bar-ds-right');
+
+    const valMotFL = document.getElementById('val-mot-fl');
+    const valMotFR = document.getElementById('val-mot-fr');
+    const valMotRL = document.getElementById('val-mot-rl');
+    const valMotRR = document.getElementById('val-mot-rr');
+    const valPitch = document.getElementById('val-pitch');
+    const valRoll = document.getElementById('val-roll');
+    const speedIndicator = document.getElementById('rover-speed-indicator');
+
+    const logStream = document.getElementById('log-stream');
+    let lastLogTime = 0;
+
+    function addLog(msg, type = 'info') {
+      const now = performance.now() / 1000;
+      const min = Math.floor(now / 60).toString().padStart(2, '0');
+      const sec = (now % 60).toFixed(2).padStart(5, '0');
+      const line = document.createElement('div');
+      line.className = `log-line ${type}`;
+      line.textContent = `[${min}:${sec}] ${msg}`;
+      logStream.appendChild(line);
+      logStream.scrollTop = logStream.scrollHeight;
+      if (logStream.children.length > 50) {
+        logStream.removeChild(logStream.children[0]);
+      }
+    }
+
+    function updateHUD() {
+      // Badge styling
+      fsmBadge.textContent = rover.state;
+      fsmBadge.className = 'state-badge';
+      if (rover.state.includes('TURN') || rover.state.includes('AVOID')) {
+        fsmBadge.classList.add('state-avoiding');
+      } else if (rover.state.includes('REV') || rover.state.includes('STOP')) {
+        fsmBadge.classList.add('state-reverse');
+      }
+
+      // Sensor readouts
+      valDsLeft.textContent = `${rover.distLeft.toFixed(2)} m (${distToADC(rover.distLeft)} ADC)`;
+      valDsCenter.textContent = `${rover.distCenter.toFixed(2)} m (${distToADC(rover.distCenter)} ADC)`;
+      valDsRight.textContent = `${rover.distRight.toFixed(2)} m (${distToADC(rover.distRight)} ADC)`;
+
+      barDsLeft.style.width = `${(rover.distLeft / 2.0) * 100}%`;
+      barDsCenter.style.width = `${(rover.distCenter / 2.0) * 100}%`;
+      barDsRight.style.width = `${(rover.distRight / 2.0) * 100}%`;
+
+      barDsLeft.className = `progress-bar-fill ${rover.distLeft < OBSTACLE_THRESHOLD ? 'danger' : ''}`;
+      barDsCenter.className = `progress-bar-fill ${rover.distCenter < OBSTACLE_THRESHOLD ? 'danger' : ''}`;
+      barDsRight.className = `progress-bar-fill ${rover.distRight < OBSTACLE_THRESHOLD ? 'danger' : ''}`;
+
+      // Motor readouts
+      valMotFL.textContent = `${rover.wFL >= 0 ? '+' : ''}${rover.wFL.toFixed(1)} rad/s`;
+      valMotFR.textContent = `${rover.wFR >= 0 ? '+' : ''}${rover.wFR.toFixed(1)} rad/s`;
+      valMotRL.textContent = `${rover.wRL >= 0 ? '+' : ''}${rover.wRL.toFixed(1)} rad/s`;
+      valMotRR.textContent = `${rover.wRR >= 0 ? '+' : ''}${rover.wRR.toFixed(1)} rad/s`;
+
+      speedIndicator.textContent = `${Math.abs(rover.linearSpeed).toFixed(2)} m/s`;
+
+      valPitch.textContent = `${(roverGroup.rotation.x * (180 / Math.PI)).toFixed(1)}°`;
+      valRoll.textContent = `${(roverGroup.rotation.z * (180 / Math.PI)).toFixed(1)}°`;
+    }
+
+    /* =========================================================================
+       CAMERA SYSTEM
+       ========================================================================= */
+    const fpvReticle = document.getElementById('fpv-reticle');
+
+    function updateCamera() {
+      if (rover.cameraMode === 'chase') {
+        controls.enabled = false;
+        fpvReticle.style.display = 'none';
+        const targetCamX = rover.x - Math.sin(rover.heading) * 1.8;
+        const targetCamZ = rover.z - Math.cos(rover.heading) * 1.8;
+        const targetCamY = 1.1;
+
+        camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.08);
+        camera.lookAt(rover.x, 0.35, rover.z);
+      } else if (rover.cameraMode === 'fpv') {
+        controls.enabled = false;
+        fpvReticle.style.display = 'block';
+        // Position camera inside mast
+        camera.position.set(rover.x, 0.48, rover.z);
+        const lookTarget = new THREE.Vector3(
+          rover.x + Math.sin(rover.heading) * 4,
+          0.38,
+          rover.z + Math.cos(rover.heading) * 4
+        );
+        camera.lookAt(lookTarget);
+      } else if (rover.cameraMode === 'top') {
+        controls.enabled = false;
+        fpvReticle.style.display = 'none';
+        camera.position.set(rover.x, 10.0, rover.z);
+        camera.lookAt(rover.x, 0, rover.z);
+      } else {
+        // Orbit Free View
+        controls.enabled = true;
+        fpvReticle.style.display = 'none';
+        controls.target.set(rover.x, 0.25, rover.z);
+        controls.update();
+      }
+    }
+
+    // Camera Switch Buttons
+    const camButtons = {
+      chase: document.getElementById('cam-chase'),
+      orbit: document.getElementById('cam-orbit'),
+      fpv: document.getElementById('cam-fpv'),
+      top: document.getElementById('cam-top')
+    };
+
+    function setCameraMode(mode) {
+      rover.cameraMode = mode;
+      Object.keys(camButtons).forEach(k => {
+        camButtons[k].classList.toggle('active', k === mode);
+      });
+      if (mode === 'orbit') {
+        controls.target.set(rover.x, 0.25, rover.z);
+      }
+    }
+
+    camButtons.chase.addEventListener('click', () => setCameraMode('chase'));
+    camButtons.orbit.addEventListener('click', () => setCameraMode('orbit'));
+    camButtons.fpv.addEventListener('click', () => setCameraMode('fpv'));
+    camButtons.top.addEventListener('click', () => setCameraMode('top'));
+
+    /* =========================================================================
+       CONTROL MODE TOGGLES & INTERACTION
+       ========================================================================= */
+    const modeAutoBtn = document.getElementById('mode-auto');
+    const modeManualBtn = document.getElementById('mode-manual');
+    const dpadControls = document.getElementById('dpad-controls');
+
+    modeAutoBtn.addEventListener('click', () => {
+      rover.autonomous = true;
+      modeAutoBtn.classList.add('active');
+      modeManualBtn.classList.remove('active');
+      dpadControls.style.display = 'none';
+      rover.state = 'FORWARD';
+      addLog('[MODE] Switched to Autonomous FSM Navigation.', 'info');
+    });
+
+    modeManualBtn.addEventListener('click', () => {
+      rover.autonomous = false;
+      modeManualBtn.classList.add('active');
+      modeAutoBtn.classList.remove('active');
+      dpadControls.style.display = 'flex';
+      rover.state = 'MANUAL_IDLE';
+      addLog('[MODE] Switched to Manual Teleoperation (WASD / D-Pad).', 'warn');
+    });
+
+    // Reset Position
+    document.getElementById('btn-reset-rover').addEventListener('click', () => {
+      rover.x = 0;
+      rover.z = 0;
+      rover.heading = 0;
+      rover.linearSpeed = 0;
+      rover.angularSpeed = 0;
+      rover.state = rover.autonomous ? 'FORWARD' : 'MANUAL_IDLE';
+      addLog('[RESET] Rover returned to coordinate origin (0, 0).', 'info');
+    });
+
+    // Toggle Sensor Rays
+    let raysVisible = true;
+    document.getElementById('btn-toggle-rays').addEventListener('click', () => {
+      raysVisible = !raysVisible;
+      sensorRaysGroup.visible = raysVisible;
+      addLog(`[SENSORS] Distance ray beams visibility: ${raysVisible ? 'ON' : 'OFF'}`);
+    });
+
+    // Keyboard handlers
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') rover.keys.w = true;
+      if (k === 'a' || k === 'arrowleft') rover.keys.a = true;
+      if (k === 's' || k === 'arrowdown') rover.keys.s = true;
+      if (k === 'd' || k === 'arrowright') rover.keys.d = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') rover.keys.w = false;
+      if (k === 'a' || k === 'arrowleft') rover.keys.a = false;
+      if (k === 's' || k === 'arrowdown') rover.keys.s = false;
+      if (k === 'd' || k === 'arrowright') rover.keys.d = false;
+    });
+
+    // D-Pad handlers
+    const setupDpadBtn = (id, key) => {
+      const el = document.getElementById(id);
+      const start = (e) => { e.preventDefault(); rover.keys[key] = true; };
+      const stop = (e) => { e.preventDefault(); rover.keys[key] = false; };
+      el.addEventListener('mousedown', start);
+      el.addEventListener('mouseup', stop);
+      el.addEventListener('mouseleave', stop);
+      el.addEventListener('touchstart', start);
+      el.addEventListener('touchend', stop);
+    };
+
+    setupDpadBtn('dpad-up', 'w');
+    setupDpadBtn('dpad-down', 's');
+    setupDpadBtn('dpad-left', 'a');
+    setupDpadBtn('dpad-right', 'd');
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* =========================================================================
+       FILE INSPECTOR MODAL & SOURCE CODE PREVIEWS
+       ========================================================================= */
+    const filesModal = document.getElementById('files-modal');
+    const btnOpenFiles = document.getElementById('btn-open-files');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const codeDisplay = document.getElementById('code-display');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+
+    btnOpenFiles.addEventListener('click', () => {
+      filesModal.classList.add('open');
+      loadSourceFile('controller');
+    });
+
+    btnCloseModal.addEventListener('click', () => {
+      filesModal.classList.remove('open');
+    });
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadSourceFile(btn.dataset.file);
+      });
+    });
+
+    function loadSourceFile(type) {
+      let url = '';
+      if (type === 'controller') url = 'controllers/rough_terrain_controller/rough_terrain_controller.py';
+      else if (type === 'proto') url = 'protos/RoughTerrainRover.proto';
+      else if (type === 'world') url = 'worlds/rough_terrain_rover.wbt';
+      else if (type === 'testplan') url = 'docs/simulation_test_plan.md';
+      else if (type === 'readme') url = 'README.md';
+
+      codeDisplay.textContent = `Loading ${url}...`;
+      fetch(url)
+        .then(res => {
+          if (!res.ok) throw new Error('File not found');
+          return res.text();
+        })
+        .then(txt => {
+          codeDisplay.textContent = txt;
+        })
+        .catch(err => {
+          codeDisplay.textContent = `Error loading ${url}: ${err.message}`;
+        });
+    }
+
+    /* =========================================================================
+       MAIN ANIMATION LOOP
+       ========================================================================= */
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+      lastTime = currentTime;
+
+      updateFSM(dt);
+      updateHUD();
+      updateCamera();
+
+      renderer.render(scene, camera);
+    }
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

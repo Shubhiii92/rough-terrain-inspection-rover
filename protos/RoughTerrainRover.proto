@@ -1,0 +1,424 @@
+#VRML_SIM R2025a utf8
+# license: Apache License 2.0
+# Description: Four-wheel Rough-Terrain Inspection Rover for Webots R2025a
+
+PROTO RoughTerrainRover [
+  field SFVec3f    translation         0 0.075 0
+  field SFRotation rotation            0 1 0 0
+  field SFString   name                "rough_terrain_rover"
+  field SFString   controller          "rough_terrain_controller"
+  field SFString   controllerArgs      ""
+  field SFString   customData          ""
+  field SFBool     supervisor          FALSE
+  field SFBool     synchronization     TRUE
+]
+{
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    controller IS controller
+    controllerArgs IS controllerArgs
+    customData IS customData
+    supervisor IS supervisor
+    synchronization IS synchronization
+    children [
+      # Main Chassis Body: Dark Metallic-Blue
+      Pose {
+        translation 0 0.035 0
+        children [
+          Shape {
+            appearance DEF CHASSIS_APP PBRAppearance {
+              baseColor 0.12 0.18 0.28
+              metalness 0.75
+              roughness 0.35
+            }
+            geometry Box {
+              size 0.42 0.12 0.32
+            }
+          }
+        ]
+      }
+      # Front Heavy-Duty Bumper
+      Pose {
+        translation 0.235 0.02 0
+        children [
+          Shape {
+            appearance DEF BUMPER_APP PBRAppearance {
+              baseColor 0.15 0.16 0.18
+              roughness 0.8
+              metalness 0.2
+            }
+            geometry Box {
+              size 0.06 0.08 0.36
+            }
+          }
+        ]
+      }
+      # Rear Heavy-Duty Bumper
+      Pose {
+        translation -0.235 0.02 0
+        children [
+          Shape {
+            appearance USE BUMPER_APP
+            geometry Box {
+              size 0.06 0.08 0.36
+            }
+          }
+        ]
+      }
+      # Upper Inspection Equipment Deck
+      Pose {
+        translation 0 0.10 0
+        children [
+          Shape {
+            appearance DEF DECK_APP PBRAppearance {
+              baseColor 0.22 0.24 0.27
+              roughness 0.5
+              metalness 0.5
+            }
+            geometry Box {
+              size 0.34 0.015 0.26
+            }
+          }
+        ]
+      }
+      # Inspection Sensor Mast
+      Pose {
+        translation 0.05 0.17 0
+        children [
+          Shape {
+            appearance DEF MAST_APP PBRAppearance {
+              baseColor 0.7 0.72 0.75
+              metalness 0.85
+              roughness 0.25
+            }
+            geometry Cylinder {
+              height 0.12
+              radius 0.012
+            }
+          }
+        ]
+      }
+      # Mast Head / Inspection Module
+      Pose {
+        translation 0.05 0.24 0
+        children [
+          Shape {
+            appearance DEF MAST_HEAD_APP PBRAppearance {
+              baseColor 0.1 0.12 0.15
+              roughness 0.4
+              metalness 0.6
+            }
+            geometry Box {
+              size 0.06 0.04 0.06
+            }
+          }
+          # Mast Inspection Status LED (Green)
+          Pose {
+            translation 0.031 0 0
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.1 0.9 0.2
+                  emissiveColor 0.1 0.9 0.2
+                  roughness 0.2
+                }
+                geometry Sphere {
+                  radius 0.008
+                }
+              }
+            ]
+          }
+        ]
+      }
+      # Front Amber Marker Lights (Left and Right)
+      Pose {
+        translation 0.24 0.055 0.14
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 1.0 0.6 0.0
+              emissiveColor 1.0 0.6 0.0
+              roughness 0.3
+            }
+            geometry Sphere {
+              radius 0.012
+            }
+          }
+        ]
+      }
+      Pose {
+        translation 0.24 0.055 -0.14
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 1.0 0.6 0.0
+              emissiveColor 1.0 0.6 0.0
+              roughness 0.3
+            }
+            geometry Sphere {
+              radius 0.012
+            }
+          }
+        ]
+      }
+      # Rear Red Marker Lights (Left and Right)
+      Pose {
+        translation -0.24 0.055 0.14
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.9 0.1 0.1
+              emissiveColor 0.9 0.1 0.1
+              roughness 0.3
+            }
+            geometry Sphere {
+              radius 0.012
+            }
+          }
+        ]
+      }
+      Pose {
+        translation -0.24 0.055 -0.14
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.9 0.1 0.1
+              emissiveColor 0.9 0.1 0.1
+              roughness 0.3
+            }
+            geometry Sphere {
+              radius 0.012
+            }
+          }
+        ]
+      }
+      # Forward Left Distance Sensor (facing +X)
+      DistanceSensor {
+        translation 0.255 0.035 0.10
+        rotation 0 1 0 0
+        children [
+          Pose {
+            rotation 0 0 1 1.57079632679
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.9 0.7 0.1
+                  emissiveColor 0.4 0.3 0.05
+                  metalness 0.7
+                  roughness 0.3
+                }
+                geometry Cylinder {
+                  height 0.015
+                  radius 0.012
+                }
+              }
+            ]
+          }
+        ]
+        name "front_left_distance"
+        lookupTable [
+          0 1000 0
+          0.3 850 0
+          1.0 500 0
+          2.0 0 0
+        ]
+        numberOfRays 2
+        aperture 0.8
+      }
+      # Forward Right Distance Sensor (facing +X)
+      DistanceSensor {
+        translation 0.255 0.035 -0.10
+        rotation 0 1 0 0
+        children [
+          Pose {
+            rotation 0 0 1 1.57079632679
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.9 0.7 0.1
+                  emissiveColor 0.4 0.3 0.05
+                  metalness 0.7
+                  roughness 0.3
+                }
+                geometry Cylinder {
+                  height 0.015
+                  radius 0.012
+                }
+              }
+            ]
+          }
+        ]
+        name "front_right_distance"
+        lookupTable [
+          0 1000 0
+          0.3 850 0
+          1.0 500 0
+          2.0 0 0
+        ]
+        numberOfRays 2
+        aperture 0.8
+      }
+      # Front-Left Wheel HingeJoint
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 -1
+          anchor 0.16 0 0.22
+        }
+        device [
+          RotationalMotor {
+            name "left_front_motor"
+            maxVelocity 10
+            maxTorque 30
+          }
+        ]
+        endPoint Solid {
+          translation 0.16 0 0.22
+          rotation 1 0 0 1.57079632679
+          children [
+            DEF WHEEL_TIRE Shape {
+              appearance DEF RUBBER_APP PBRAppearance {
+                baseColor 0.12 0.12 0.14
+                roughness 0.85
+                metalness 0.1
+              }
+              geometry Cylinder {
+                height 0.045
+                radius 0.075
+              }
+            }
+            DEF WHEEL_HUB Shape {
+              appearance DEF HUB_APP PBRAppearance {
+                baseColor 0.65 0.68 0.72
+                metalness 0.8
+                roughness 0.25
+              }
+              geometry Cylinder {
+                height 0.047
+                radius 0.035
+              }
+            }
+          ]
+          boundingObject Cylinder {
+            height 0.045
+            radius 0.075
+          }
+          physics Physics {
+            density -1
+            mass 1.0
+          }
+          contactMaterial "rubber"
+        }
+      }
+      # Rear-Left Wheel HingeJoint
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 -1
+          anchor -0.16 0 0.22
+        }
+        device [
+          RotationalMotor {
+            name "left_rear_motor"
+            maxVelocity 10
+            maxTorque 30
+          }
+        ]
+        endPoint Solid {
+          translation -0.16 0 0.22
+          rotation 1 0 0 1.57079632679
+          children [
+            USE WHEEL_TIRE
+            USE WHEEL_HUB
+          ]
+          boundingObject Cylinder {
+            height 0.045
+            radius 0.075
+          }
+          physics Physics {
+            density -1
+            mass 1.0
+          }
+          contactMaterial "rubber"
+        }
+      }
+      # Front-Right Wheel HingeJoint
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 -1
+          anchor 0.16 0 -0.22
+        }
+        device [
+          RotationalMotor {
+            name "right_front_motor"
+            maxVelocity 10
+            maxTorque 30
+          }
+        ]
+        endPoint Solid {
+          translation 0.16 0 -0.22
+          rotation 1 0 0 1.57079632679
+          children [
+            USE WHEEL_TIRE
+            USE WHEEL_HUB
+          ]
+          boundingObject Cylinder {
+            height 0.045
+            radius 0.075
+          }
+          physics Physics {
+            density -1
+            mass 1.0
+          }
+          contactMaterial "rubber"
+        }
+      }
+      # Rear-Right Wheel HingeJoint
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 -1
+          anchor -0.16 0 -0.22
+        }
+        device [
+          RotationalMotor {
+            name "right_rear_motor"
+            maxVelocity 10
+            maxTorque 30
+          }
+        ]
+        endPoint Solid {
+          translation -0.16 0 -0.22
+          rotation 1 0 0 1.57079632679
+          children [
+            USE WHEEL_TIRE
+            USE WHEEL_HUB
+          ]
+          boundingObject Cylinder {
+            height 0.045
+            radius 0.075
+          }
+          physics Physics {
+            density -1
+            mass 1.0
+          }
+          contactMaterial "rubber"
+        }
+      }
+    ]
+    boundingObject DEF CHASSIS_BOUNDING Pose {
+      translation 0 0.035 0
+      children [
+        Box {
+          size 0.48 0.12 0.34
+        }
+      ]
+    }
+    physics Physics {
+      density -1
+      mass 12.0
+      centerOfMass [
+        0 0.01 0
+      ]
+    }
+  }
+}
