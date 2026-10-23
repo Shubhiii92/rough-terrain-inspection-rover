@@ -179,3 +179,11 @@ The test plan evaluates:
 | **T-08** | Recovery State & Spin Guard | State Machine Watchdog | **PASS** (Bounded turns & reverse recovery) |
 | **T-09** | Rock Slab Negotiation | Terrain Physics Scene | **PASS** (Slab height $<$ wheel radius) |
 | **T-10** | Ramp Incline Traversal | Physics Inclined Plane | **PASS** (8.5° slope, 30 Nm motor limit) |
+| **T-11** | Analytical Ground Heightfield | Browser Unit Test | **PASS** (Continuous height & surface normal) |
+| **T-12** | 4-Wheel Terrain Contact & Suspension | WebGL Kinematics | **PASS** (No ground penetration or floating) |
+| **T-13** | Solid Boulder Collision Repulsion | Collision Solver | **PASS** (Slide along normal without clipping) |
+| **T-14** | Single Boulder Obstacle Avoidance | FSM Controller | **PASS** (Slowdown at 0.65m, pivot at 0.35m) |
+| **T-15** | Dead-End Trap Recovery | Anti-Stuck Watchdog | **PASS** (Multi-point reverse and turn escape) |
+| **T-16** | Waypoint Circuit Navigation | Vector Steering AI | **PASS** (Sequential waypoint patrol Alpha-Delta) |
+| **T-17** | GitHub Pages Deployment | GitHub Actions CI/CD | **PASS** (Automated deploy-pages.yml) |
+

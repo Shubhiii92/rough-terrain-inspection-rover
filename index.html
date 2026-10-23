@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rough-Terrain Inspection Rover | Webots R2025a Simulation</title>
-  <meta name="description" content="Live 3D Webots R2025a Rough-Terrain Inspection Rover Simulation with 4-wheel kinematics, autonomous obstacle avoidance FSM, sensor raycasting, and telemetry dashboard.">
+  <title>Rough-Terrain Inspection Rover | Webots R2025a & 3D Simulation</title>
+  <meta name="description" content="Realistic 3D Rough-Terrain Inspection Rover Simulation with 4-wheel suspension contact physics, terrain heightfield, autonomous obstacle avoidance FSM, live telemetry, and test scenarios.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #0a0d14;
-      --panel-bg: rgba(16, 22, 34, 0.75);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --panel-glow: rgba(0, 210, 255, 0.15);
+      --bg-dark: #070a12;
+      --panel-bg: rgba(13, 19, 33, 0.82);
+      --panel-border: rgba(255, 255, 255, 0.09);
+      --panel-border-hover: rgba(0, 210, 255, 0.35);
       --accent-cyan: #00d2ff;
       --accent-yellow: #f59e0b;
       --accent-green: #10b981;
       --accent-red: #ef4444;
-      --text-main: #f1f5f9;
+      --accent-orange: #f97316;
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
       --font-heading: 'Outfit', sans-serif;
@@ -53,20 +54,20 @@
     /* Top Navigation Bar */
     header {
       position: absolute;
-      top: 16px;
-      left: 20px;
-      right: 20px;
+      top: 14px;
+      left: 18px;
+      right: 18px;
       z-index: 10;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 24px;
+      padding: 10px 22px;
       background: var(--panel-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border-radius: 14px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
     }
 
     .brand {
@@ -96,7 +97,7 @@
     }
 
     .brand-text p {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: var(--text-muted);
       display: flex;
       align-items: center;
@@ -120,27 +121,27 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .btn {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--panel-border);
       color: var(--text-main);
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 0.82rem;
+      padding: 7px 14px;
+      border-radius: 9px;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .btn:hover {
       background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: var(--panel-border-hover);
       transform: translateY(-1px);
     }
 
@@ -156,44 +157,60 @@
       box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
     }
 
-    .btn-warning {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      border-color: #fbbf24;
-      color: #0f172a;
-      box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+    /* Scenario Selector Dropdown */
+    .scenario-select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--panel-border);
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .scenario-select option {
+      background: #0d1321;
+      color: #fff;
     }
 
     /* Left Telemetry Panel */
     .telemetry-panel {
       position: absolute;
-      top: 86px;
-      left: 20px;
+      top: 80px;
+      left: 18px;
       width: 320px;
       z-index: 10;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       pointer-events: none;
+      transition: transform 0.3s ease;
+    }
+
+    .telemetry-panel.collapsed {
+      transform: translateX(-340px);
     }
 
     .glass-card {
       background: var(--panel-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 14px;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
       pointer-events: auto;
     }
 
     .card-title {
-      font-size: 0.72rem;
+      font-size: 0.70rem;
       text-transform: uppercase;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       color: var(--text-muted);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -201,9 +218,9 @@
 
     .state-badge {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       font-weight: 700;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       background: rgba(16, 185, 129, 0.15);
       border: 1px solid rgba(16, 185, 129, 0.3);
@@ -224,9 +241,44 @@
       color: var(--accent-red);
     }
 
+    .state-badge.state-recovery {
+      background: rgba(249, 115, 22, 0.25);
+      border-color: rgba(249, 115, 22, 0.5);
+      color: var(--accent-orange);
+      animation: pulse 1s infinite;
+    }
+
+    /* Warning Banner */
+    .status-alert {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--accent-green);
+      transition: all 0.25s ease;
+    }
+
+    .status-alert.alert-warn {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: var(--accent-yellow);
+    }
+
+    .status-alert.alert-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: var(--accent-red);
+    }
+
     /* Sensor Gauges */
     .sensor-item {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .sensor-item:last-child {
@@ -236,8 +288,8 @@
     .sensor-header {
       display: flex;
       justify-content: space-between;
-      font-size: 0.75rem;
-      margin-bottom: 4px;
+      font-size: 0.72rem;
+      margin-bottom: 3px;
     }
 
     .sensor-label {
@@ -252,7 +304,7 @@
     }
 
     .progress-bar-bg {
-      height: 6px;
+      height: 5px;
       background: rgba(255, 255, 255, 0.08);
       border-radius: 4px;
       overflow: hidden;
@@ -264,7 +316,11 @@
       width: 100%;
       background: linear-gradient(90deg, #10b981, #00d2ff);
       border-radius: 4px;
-      transition: width 0.1s linear, background 0.2s ease;
+      transition: width 0.08s linear, background 0.2s ease;
+    }
+
+    .progress-bar-fill.warn {
+      background: linear-gradient(90deg, #f59e0b, #eab308);
     }
 
     .progress-bar-fill.danger {
@@ -275,47 +331,79 @@
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
 
     .metric-box {
       background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 8px;
-      padding: 8px 10px;
+      padding: 7px 9px;
     }
 
     .metric-box-title {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
       margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
     }
 
     .metric-box-val {
       font-family: var(--font-mono);
-      font-size: 0.92rem;
+      font-size: 0.88rem;
       font-weight: 600;
       color: var(--text-main);
+    }
+
+    /* Wheel contact indicators */
+    .wheel-contact-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .wheel-indicator {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 5px 2px;
+      text-align: center;
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .wheel-indicator.grounded {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--accent-green);
     }
 
     /* Right Bottom Log Console */
     .log-panel {
       position: absolute;
-      bottom: 20px;
-      right: 20px;
-      width: 380px;
-      height: 210px;
+      bottom: 18px;
+      right: 18px;
+      width: 390px;
+      height: 200px;
       z-index: 10;
       display: flex;
       flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+
+    .log-panel.collapsed {
+      transform: translateY(220px);
     }
 
     .log-content {
       flex: 1;
       overflow-y: auto;
       font-family: var(--font-mono);
-      font-size: 0.72rem;
-      line-height: 1.5;
+      font-size: 0.70rem;
+      line-height: 1.45;
       padding-right: 4px;
       display: flex;
       flex-direction: column;
@@ -344,32 +432,32 @@
     /* Bottom Control Bar */
     .bottom-bar {
       position: absolute;
-      bottom: 20px;
-      left: 20px;
+      bottom: 18px;
+      left: 18px;
       z-index: 10;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       background: var(--panel-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 10px 16px;
+      border-radius: 12px;
+      padding: 8px 14px;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
 
     .mode-toggle {
       display: flex;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.35);
       padding: 3px;
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .mode-btn {
-      padding: 6px 14px;
-      font-size: 0.76rem;
+      padding: 5px 12px;
+      font-size: 0.74rem;
       font-weight: 600;
       border: none;
       background: transparent;
@@ -387,12 +475,12 @@
 
     .cam-btn-group {
       display: flex;
-      gap: 6px;
+      gap: 5px;
     }
 
     .cam-btn {
-      padding: 6px 10px;
-      font-size: 0.74rem;
+      padding: 5px 9px;
+      font-size: 0.72rem;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--panel-border);
       color: var(--text-muted);
@@ -408,14 +496,30 @@
       font-weight: 600;
     }
 
+    /* Speed Slider Controls */
+    .speed-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    .speed-slider-wrap input[type=range] {
+      width: 70px;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+
     /* Reticle for FPV */
     #fpv-reticle {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 140px;
-      height: 140px;
+      width: 160px;
+      height: 160px;
       pointer-events: none;
       z-index: 5;
       display: none;
@@ -425,8 +529,8 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(5, 8, 15, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(5, 8, 15, 0.88);
+      backdrop-filter: blur(14px);
       z-index: 100;
       display: none;
       align-items: center;
@@ -440,7 +544,7 @@
 
     .modal-content {
       background: #0f172a;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 16px;
       width: 900px;
       max-width: 95vw;
@@ -456,7 +560,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
+      padding: 14px 20px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(255, 255, 255, 0.02);
     }
@@ -512,17 +616,17 @@
     /* Manual Control D-Pad overlay */
     .dpad-container {
       position: absolute;
-      bottom: 90px;
-      left: 20px;
+      bottom: 80px;
+      left: 18px;
       z-index: 10;
       display: none;
       flex-direction: column;
       align-items: center;
       gap: 6px;
       background: var(--panel-bg);
-      backdrop-filter: blur(16px);
-      padding: 12px;
-      border-radius: 14px;
+      backdrop-filter: blur(18px);
+      padding: 10px;
+      border-radius: 12px;
       border: 1px solid var(--panel-border);
     }
 
@@ -532,8 +636,8 @@
     }
 
     .dpad-btn {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
@@ -551,6 +655,34 @@
       color: #000;
       transform: scale(0.95);
     }
+
+    /* Toggle UI Panels */
+    .hud-toggle-btn {
+      position: absolute;
+      top: 80px;
+      left: 18px;
+      z-index: 9;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* Waypoint beacon marker label in 3D */
+    .waypoint-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      background: rgba(0, 210, 255, 0.2);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
   </style>
 
   <!-- Three.js and OrbitControls -->
@@ -565,12 +697,12 @@
   <!-- FPV Reticle (shown in mast camera mode) -->
   <svg id="fpv-reticle" viewBox="0 0 100 100">
     <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(0, 210, 255, 0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
-    <circle cx="50" cy="50" r="3" fill="#00d2ff"/>
-    <line x1="15" y1="50" x2="35" y2="50" stroke="#00d2ff" stroke-width="1.5"/>
-    <line x1="65" y1="50" x2="85" y2="50" stroke="#00d2ff" stroke-width="1.5"/>
-    <line x1="50" y1="15" x2="50" y2="35" stroke="#00d2ff" stroke-width="1.5"/>
-    <line x1="50" y1="65" x2="50" y2="85" stroke="#00d2ff" stroke-width="1.5"/>
-    <text x="50" y="92" font-size="6" fill="#00d2ff" text-anchor="middle" font-family="'JetBrains Mono', monospace">MAST-CAM 1080p</text>
+    <circle cx="50" cy="50" r="2.5" fill="#00d2ff"/>
+    <line x1="15" y1="50" x2="35" y2="50" stroke="#00d2ff" stroke-width="1.2"/>
+    <line x1="65" y1="50" x2="85" y2="50" stroke="#00d2ff" stroke-width="1.2"/>
+    <line x1="50" y1="15" x2="50" y2="35" stroke="#00d2ff" stroke-width="1.2"/>
+    <line x1="50" y1="65" x2="50" y2="85" stroke="#00d2ff" stroke-width="1.2"/>
+    <text x="50" y="88" font-size="5.5" fill="#00d2ff" text-anchor="middle" font-family="'JetBrains Mono', monospace">MAST-CAM HD &bull; 30 FPS</text>
   </svg>
 
   <!-- Top Navigation Header -->
@@ -579,93 +711,131 @@
       <div class="brand-icon">🤖</div>
       <div class="brand-text">
         <h1>ROUGH-TERRAIN INSPECTION ROVER</h1>
-        <p><span class="live-dot"></span> Webots R2025a Project &bull; 4-Wheel Differential Drive</p>
+        <p><span class="live-dot"></span> Earth-Like Terrain &bull; 4-Wheel Contact Physics &bull; Webots R2025a</p>
       </div>
     </div>
     <div class="nav-actions">
+      <!-- Test Scenario Selector -->
+      <select class="scenario-select" id="scenario-selector" title="Choose repeatable test scenario">
+        <option value="open">Scenario 1: Open Terrain Traverse</option>
+        <option value="single_rock">Scenario 2: Single Boulder Avoidance</option>
+        <option value="slalom">Scenario 3: Rocky Slalom Maze</option>
+        <option value="canyon">Scenario 4: Narrow Canyon Gate</option>
+        <option value="ridge">Scenario 5: Steep Ridge & Berm</option>
+        <option value="trap">Scenario 6: Dead-End U-Trap Escape</option>
+        <option value="patrol">Scenario 7: Autonomous Waypoint Patrol</option>
+      </select>
+
       <button class="btn" id="btn-open-files" title="Inspect PROTO, Controller & World files">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        Inspect Source Files
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Inspect Files
       </button>
       <a class="btn btn-primary" href="RoughTerrainRover_Webots_R2025a.zip" download="RoughTerrainRover_Webots_R2025a.zip" title="Download entire Webots project ZIP">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        Download Project ZIP
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Download ZIP
       </a>
     </div>
   </header>
 
   <!-- Left Telemetry & State Panel -->
-  <div class="telemetry-panel">
+  <div class="telemetry-panel" id="telemetry-panel">
+    <!-- Status & Alerts Card -->
     <div class="glass-card">
       <div class="card-title">
-        <span>FSM AUTONOMOUS CONTROLLER</span>
-        <span class="state-badge" id="fsm-badge">FORWARD</span>
+        <span>NAVIGATION CONTROLLER</span>
+        <span class="state-badge" id="fsm-badge">FORWARD_CRUISE</span>
+      </div>
+
+      <div class="status-alert" id="status-alert">
+        <span id="alert-icon">🟢</span>
+        <span id="alert-text">Path Clear &bull; Nominal Terrain Traversal</span>
       </div>
 
       <!-- Distance Sensors with calibrated piecewise range -->
       <div class="sensor-item">
         <div class="sensor-header">
-          <span class="sensor-label">FRONT-LEFT SENSOR [ds_left]</span>
-          <span class="sensor-val" id="val-ds-left">1.95 m (30 ADC)</span>
+          <span class="sensor-label">FRONT-LEFT [ds_left +28&deg;]</span>
+          <span class="sensor-val" id="val-ds-left">2.50 m (0 ADC)</span>
         </div>
         <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="bar-ds-left" style="width: 95%;"></div>
+          <div class="progress-bar-fill" id="bar-ds-left" style="width: 100%;"></div>
         </div>
       </div>
 
       <div class="sensor-item">
         <div class="sensor-header">
-          <span class="sensor-label">FRONT-CENTER SENSOR [ds_center]</span>
-          <span class="sensor-val" id="val-ds-center">1.80 m (80 ADC)</span>
+          <span class="sensor-label">FRONT-CENTER [ds_center 0&deg;]</span>
+          <span class="sensor-val" id="val-ds-center">2.50 m (0 ADC)</span>
         </div>
         <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="bar-ds-center" style="width: 90%;"></div>
+          <div class="progress-bar-fill" id="bar-ds-center" style="width: 100%;"></div>
         </div>
       </div>
 
       <div class="sensor-item">
         <div class="sensor-header">
-          <span class="sensor-label">FRONT-RIGHT SENSOR [ds_right]</span>
-          <span class="sensor-val" id="val-ds-right">1.92 m (40 ADC)</span>
+          <span class="sensor-label">FRONT-RIGHT [ds_right -28&deg;]</span>
+          <span class="sensor-val" id="val-ds-right">2.50 m (0 ADC)</span>
         </div>
         <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="bar-ds-right" style="width: 94%;"></div>
+          <div class="progress-bar-fill" id="bar-ds-right" style="width: 100%;"></div>
         </div>
       </div>
     </div>
 
-    <!-- Rover Kinematics & Motor Velocities -->
+    <!-- Rover Kinematics & 4-Wheel Contact Grounding -->
     <div class="glass-card">
       <div class="card-title">
-        <span>4-WHEEL DRIVE KINEMATICS</span>
-        <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-cyan);" id="rover-speed-indicator">0.42 m/s</span>
+        <span>4-WHEEL SUSPENSION DYNAMICS</span>
+        <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-cyan);" id="rover-speed-indicator">0.00 m/s</span>
       </div>
       <div class="metric-grid">
         <div class="metric-box">
-          <div class="metric-box-title">FL MOTOR</div>
-          <div class="metric-box-val" id="val-mot-fl">+6.0 rad/s</div>
+          <div class="metric-box-title">FL MOTOR <span id="slip-fl" style="color: #10b981;">100%</span></div>
+          <div class="metric-box-val" id="val-mot-fl">+0.0 rad/s</div>
         </div>
         <div class="metric-box">
-          <div class="metric-box-title">FR MOTOR</div>
-          <div class="metric-box-val" id="val-mot-fr">+6.0 rad/s</div>
+          <div class="metric-box-title">FR MOTOR <span id="slip-fr" style="color: #10b981;">100%</span></div>
+          <div class="metric-box-val" id="val-mot-fr">+0.0 rad/s</div>
         </div>
         <div class="metric-box">
-          <div class="metric-box-title">RL MOTOR</div>
-          <div class="metric-box-val" id="val-mot-rl">+6.0 rad/s</div>
+          <div class="metric-box-title">RL MOTOR <span id="slip-rl" style="color: #10b981;">100%</span></div>
+          <div class="metric-box-val" id="val-mot-rl">+0.0 rad/s</div>
         </div>
         <div class="metric-box">
-          <div class="metric-box-title">RR MOTOR</div>
-          <div class="metric-box-val" id="val-mot-rr">+6.0 rad/s</div>
+          <div class="metric-box-title">RR MOTOR <span id="slip-rr" style="color: #10b981;">100%</span></div>
+          <div class="metric-box-val" id="val-mot-rr">+0.0 rad/s</div>
         </div>
       </div>
-      <div class="metric-grid" style="margin-top: 10px;">
+
+      <!-- Wheel ground contact tags -->
+      <div class="wheel-contact-grid">
+        <div class="wheel-indicator grounded" id="ind-fl">FL: ON</div>
+        <div class="wheel-indicator grounded" id="ind-fr">FR: ON</div>
+        <div class="wheel-indicator grounded" id="ind-rl">RL: ON</div>
+        <div class="wheel-indicator grounded" id="ind-rr">RR: ON</div>
+      </div>
+
+      <!-- Chassis Attitude / IMU Angles -->
+      <div class="metric-grid" style="margin-top: 8px;">
         <div class="metric-box">
           <div class="metric-box-title">IMU PITCH</div>
-          <div class="metric-box-val" id="val-pitch">+1.2&deg;</div>
+          <div class="metric-box-val" id="val-pitch">+0.0&deg;</div>
         </div>
         <div class="metric-box">
           <div class="metric-box-title">IMU ROLL</div>
-          <div class="metric-box-val" id="val-roll">-0.6&deg;</div>
+          <div class="metric-box-val" id="val-roll">+0.0&deg;</div>
+        </div>
+      </div>
+
+      <div class="metric-grid" style="margin-top: 8px;">
+        <div class="metric-box">
+          <div class="metric-box-title">ELEVATION (Y)</div>
+          <div class="metric-box-val" id="val-elev">0.10 m</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-box-title">HEADING (YAW)</div>
+          <div class="metric-box-val" id="val-yaw">000&deg; N</div>
         </div>
       </div>
     </div>
@@ -674,14 +844,14 @@
   <!-- Manual Drive D-Pad (only when Manual Mode is active) -->
   <div class="dpad-container" id="dpad-controls">
     <div class="dpad-row">
-      <button class="dpad-btn" id="dpad-up" title="Drive Forward">&uarr;</button>
+      <button class="dpad-btn" id="dpad-up" title="Drive Forward (W / &uarr;)">&uarr;</button>
     </div>
     <div class="dpad-row">
-      <button class="dpad-btn" id="dpad-left" title="Turn Left">&larr;</button>
-      <button class="dpad-btn" id="dpad-down" title="Reverse">&darr;</button>
-      <button class="dpad-btn" id="dpad-right" title="Turn Right">&rarr;</button>
+      <button class="dpad-btn" id="dpad-left" title="Turn Left (A / &larr;)">&larr;</button>
+      <button class="dpad-btn" id="dpad-down" title="Reverse (S / &darr;)">&darr;</button>
+      <button class="dpad-btn" id="dpad-right" title="Turn Right (D / &rarr;)">&rarr;</button>
     </div>
-    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-align: center;">WASD or Arrows</div>
+    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-align: center;">WASD / Arrows &bull; Space=Brake</div>
   </div>
 
   <!-- Bottom Navigation & Controls Bar -->
@@ -691,37 +861,53 @@
       <button class="mode-btn" id="mode-manual">Manual Drive</button>
     </div>
 
-    <div style="width: 1px; height: 22px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 2px;"></div>
 
     <div class="cam-btn-group">
-      <button class="cam-btn active" id="cam-chase">Follow Cam</button>
+      <button class="cam-btn active" id="cam-chase">Follow</button>
       <button class="cam-btn" id="cam-orbit">Orbit 360&deg;</button>
       <button class="cam-btn" id="cam-fpv">Mast FPV</button>
       <button class="cam-btn" id="cam-top">Top Down</button>
     </div>
 
-    <div style="width: 1px; height: 22px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 2px;"></div>
 
-    <button class="btn" id="btn-reset-rover" title="Reset Rover Position to Start">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    <!-- Speed scale slider -->
+    <div class="speed-slider-wrap" title="Adjust Rover Throttle / Target Speed">
+      <span>Throttle:</span>
+      <input type="range" id="speed-slider" min="0.3" max="1.5" step="0.1" value="0.8">
+      <span id="speed-slider-val" style="font-family: var(--font-mono); color: var(--accent-cyan); min-width: 28px;">0.8x</span>
+    </div>
+
+    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 2px;"></div>
+
+    <button class="btn" id="btn-brake" title="Emergency Brake (Spacebar)" style="color: var(--accent-red);">
+      Brake
+    </button>
+    <button class="btn" id="btn-unstick" title="Unstick & Ground Alignment (Recover to safe flat terrain)">
+      Unstick
+    </button>
+    <button class="btn" id="btn-reset-rover" title="Reset Rover to Start Position">
       Reset
     </button>
-    <button class="btn" id="btn-toggle-rays" title="Toggle Visible Sensor Rays">
-      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    <button class="btn" id="btn-toggle-rays" title="Toggle Visible Sensor Ray Beams">
       Sensor Rays
     </button>
   </div>
 
   <!-- Bottom-Right Live Event Logs Panel -->
-  <div class="log-panel glass-card">
+  <div class="log-panel glass-card" id="log-panel">
     <div class="card-title">
-      <span>ROVER CONTROLLER LOG</span>
-      <span style="font-size: 0.68rem; color: var(--accent-green);">32ms Cycle</span>
+      <span>ROVER TELEMETRY LOG</span>
+      <div style="display: flex; gap: 8px;">
+        <span style="font-size: 0.68rem; color: var(--accent-green); cursor: pointer;" id="btn-clear-logs">[Clear]</span>
+        <span style="font-size: 0.68rem; color: var(--text-muted); cursor: pointer;" id="btn-toggle-logs">[Minimize]</span>
+      </div>
     </div>
     <div class="log-content" id="log-stream">
-      <div class="log-line info">[00:00.00] System initialized. Webots R2025a Python FSM active.</div>
-      <div class="log-line info">[00:00.01] Calibrated DistanceSensor lookup tables loaded.</div>
-      <div class="log-line success">[00:00.02] Motors configured: fl_motor, fr_motor, rl_motor, rr_motor.</div>
+      <div class="log-line info">[00:00.00] System initialized &bull; 4-Wheel Differential Kinematics active.</div>
+      <div class="log-line info">[00:00.01] Procedural Earth-Like Heightfield generated (50m x 50m).</div>
+      <div class="log-line success">[00:00.02] Ground collision & suspension terrain-following loaded.</div>
     </div>
   </div>
 
@@ -729,7 +915,7 @@
   <div class="modal-overlay" id="files-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title">Webots Project Files & Inspection</div>
+        <div class="modal-title">Webots Project Files & Source Code</div>
         <button class="btn" id="btn-close-modal" style="padding: 4px 10px;">&times; Close</button>
       </div>
       <div class="modal-tabs">
@@ -747,15 +933,75 @@
 
   <script>
     /* =========================================================================
-       THREE.JS 3D SIMULATION SETUP
+       1. MATHEMATICAL TERRAIN HEIGHTFIELD & GRADIENT ENGINE
+       ========================================================================= */
+    const TERRAIN_SIZE = 60.0; // 60m x 60m area
+    const TERRAIN_SEGMENTS = 120;
+    const BOUNDARY_RADIUS = 26.0;
+
+    // Multi-octave natural terrain function (continuous, analytical, fully invertible)
+    function getTerrainElevation(x, z) {
+      const r = Math.sqrt(x * x + z * z);
+      
+      // Keep center spawn pad (r < 2.5m) flat for guaranteed stable startup
+      let spawnMask = 1.0;
+      if (r < 2.5) {
+        spawnMask = 0.0;
+      } else if (r < 4.0) {
+        spawnMask = (r - 2.5) / 1.5;
+        spawnMask = spawnMask * spawnMask * (3 - 2 * spawnMask); // smoothstep
+      }
+
+      // Natural broad earth slopes and ridges
+      const octave1 = Math.sin(x * 0.18 + 0.4) * Math.cos(z * 0.16 - 0.2) * 0.75;
+      const octave2 = Math.sin(x * 0.38 - z * 0.32) * 0.35;
+      const octave3 = (Math.cos(x * 0.85 + 1.2) * Math.sin(z * 0.85)) * 0.14;
+      const octave4 = Math.sin(x * 1.6 + z * 1.4) * 0.05;
+
+      // Northwest test ramp/hill feature (around x = -8, z = 8)
+      const rampDist = Math.hypot(x - (-8.0), z - 8.0);
+      const rampFeature = Math.max(0, 1.0 - rampDist / 6.0) * 0.85;
+
+      // Northeast gully / shallow wash (around x = 8, z = 7)
+      const gullyDist = Math.hypot(x - 8.0, z - 7.0);
+      const gullyFeature = -Math.max(0, 1.0 - gullyDist / 5.0) * 0.45;
+
+      let h = (octave1 + octave2 + octave3 + octave4 + rampFeature + gullyFeature) * spawnMask;
+
+      // Outer boundary crater ridge: smoothly rises up around r > 18.5m to form natural impassable barrier
+      if (r > 18.5) {
+        const edgeFactor = Math.min(1.0, (r - 18.5) / 5.5);
+        h += Math.pow(edgeFactor, 1.6) * 4.2;
+      }
+
+      return h;
+    }
+
+    // Analytical terrain normal vector at (x, z) using finite difference
+    function getTerrainNormal(x, z) {
+      const eps = 0.05;
+      const hL = getTerrainElevation(x - eps, z);
+      const hR = getTerrainElevation(x + eps, z);
+      const hD = getTerrainElevation(x, z - eps);
+      const hU = getTerrainElevation(x, z + eps);
+
+      const dx = (hR - hL) / (2 * eps);
+      const dz = (hU - hD) / (2 * eps);
+
+      const normal = new THREE.Vector3(-dx, 1.0, -dz);
+      return normal.normalize();
+    }
+
+    /* =========================================================================
+       2. THREE.JS 3D SCENE SETUP & ENVIRONMENT LIGHTING
        ========================================================================= */
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0f1d);
-    scene.fog = new THREE.FogExp2(0x0a0f1d, 0.035);
+    scene.background = new THREE.Color(0x0a101d);
+    scene.fog = new THREE.FogExp2(0x0a101d, 0.024);
 
-    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 150);
-    camera.position.set(0, 3.5, 6);
+    const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.08, 160);
+    camera.position.set(0, 3.8, 6.5);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -763,317 +1009,471 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.02; // prevent below ground
+    controls.maxPolarAngle = Math.PI / 2 - 0.02;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.6);
-    scene.add(ambientLight);
+    // Environmental Lighting: Realistic Earth Sun + Sky Hemisphere
+    const hemiLight = new THREE.HemisphereLight(0x94bbf2, 0x473b2c, 0.75);
+    scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfff5ea, 1.3);
-    sunLight.position.set(15, 25, 12);
+    const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
+    sunLight.position.set(22, 32, 18);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
     sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 60;
-    sunLight.shadow.camera.left = -18;
-    sunLight.shadow.camera.right = 18;
-    sunLight.shadow.camera.top = 18;
-    sunLight.shadow.camera.bottom = -18;
-    sunLight.shadow.bias = -0.0005;
+    sunLight.shadow.camera.far = 75;
+    sunLight.shadow.camera.left = -25;
+    sunLight.shadow.camera.right = 25;
+    sunLight.shadow.camera.top = 25;
+    sunLight.shadow.camera.bottom = -25;
+    sunLight.shadow.bias = -0.0003;
     scene.add(sunLight);
 
-    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
-    fillLight.position.set(-15, 10, -10);
-    scene.add(fillLight);
+    const skyFill = new THREE.DirectionalLight(0x38bdf8, 0.35);
+    skyFill.position.set(-20, 15, -15);
+    scene.add(skyFill);
 
     /* =========================================================================
-       PROCEDURAL ROUGH TERRAIN & OBSTACLES
+       3. PROCEDURAL TERRAIN MESH GENERATION (RICH EARTH TEXTURE)
        ========================================================================= */
-    const terrainSize = 50;
-    const terrainSegments = 80;
-    const terrainGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
+    const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
     terrainGeo.rotateX(-Math.PI / 2);
 
     const posAttr = terrainGeo.attributes.position;
     for (let i = 0; i < posAttr.count; i++) {
-      const x = posAttr.getX(i);
-      const z = posAttr.getZ(i);
-      // Rough terrain height function (gentle undulations + small bumps, flat at spawn 0,0)
-      const distFromOrigin = Math.sqrt(x * x + z * z);
-      if (distFromOrigin > 2.0) {
-        const height = Math.sin(x * 0.45) * Math.cos(z * 0.45) * 0.35 +
-                       Math.sin(x * 1.2 + z * 0.8) * 0.12;
-        posAttr.setY(i, height);
-      } else {
-        posAttr.setY(i, 0.0);
-      }
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i);
+      const vy = getTerrainElevation(vx, vz);
+      posAttr.setY(i, vy);
     }
     terrainGeo.computeVertexNormals();
 
-    // Terrain Material with grid + ground texture styling
-    const canvasTexture = document.createElement('canvas');
-    canvasTexture.width = 512;
-    canvasTexture.height = 512;
-    const ctx = canvasTexture.getContext('2d');
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0, 0, 512, 512);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-    ctx.lineWidth = 2;
-    for (let k = 0; k <= 512; k += 32) {
-      ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k, 512); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, k); ctx.lineTo(512, k); ctx.stroke();
+    // High quality procedural Earth canvas texture
+    const texCanvas = document.createElement('canvas');
+    texCanvas.width = 1024;
+    texCanvas.height = 1024;
+    const tctx = texCanvas.getContext('2d');
+
+    // Base earth tones: dark brown clay / loam
+    const grad = tctx.createLinearGradient(0, 0, 1024, 1024);
+    grad.addColorStop(0, '#31231e');
+    grad.addColorStop(0.5, '#3b2f28');
+    grad.addColorStop(1, '#2c221d');
+    tctx.fillStyle = grad;
+    tctx.fillRect(0, 0, 1024, 1024);
+
+    // Grid inspection grid overlay
+    tctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    tctx.lineWidth = 1.5;
+    for (let g = 0; g <= 1024; g += 64) {
+      tctx.beginPath(); tctx.moveTo(g, 0); tctx.lineTo(g, 1024); tctx.stroke();
+      tctx.beginPath(); tctx.moveTo(0, g); tctx.lineTo(1024, g); tctx.stroke();
     }
-    // Add noise specks
-    for (let s = 0; s < 3000; s++) {
-      const nx = Math.random() * 512;
-      const ny = Math.random() * 512;
-      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(0, 0, 0, 0.2)';
-      ctx.fillRect(nx, ny, 2, 2);
+
+    // Procedural pebbles, gravel, and earth noise specks
+    for (let s = 0; s < 7000; s++) {
+      const sx = Math.random() * 1024;
+      const sy = Math.random() * 1024;
+      const size = 1 + Math.random() * 2.5;
+      const roll = Math.random();
+      if (roll < 0.4) {
+        tctx.fillStyle = 'rgba(120, 113, 108, 0.25)'; // granite gray pebble
+      } else if (roll < 0.7) {
+        tctx.fillStyle = 'rgba(180, 83, 9, 0.15)'; // iron red dirt
+      } else {
+        tctx.fillStyle = 'rgba(15, 23, 42, 0.35)'; // dark soil shadow
+      }
+      tctx.fillRect(sx, sy, size, size);
     }
-    const groundTex = new THREE.CanvasTexture(canvasTexture);
+
+    const groundTex = new THREE.CanvasTexture(texCanvas);
     groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
     groundTex.repeat.set(12, 12);
 
     const terrainMat = new THREE.MeshStandardMaterial({
       map: groundTex,
-      roughness: 0.85,
-      metalness: 0.15,
+      roughness: 0.92,
+      metalness: 0.08,
       flatShading: true
     });
     const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
     terrainMesh.receiveShadow = true;
     scene.add(terrainMesh);
 
-    // Obstacles / Rocks Array for Collision & Distance Sensing
+    // Boundary marker pylons around the terrain perimeter
+    const pylonGeo = new THREE.CylinderGeometry(0.12, 0.16, 1.4, 8);
+    const pylonMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.5 });
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+      const px = Math.cos(a) * 23.0;
+      const pz = Math.sin(a) * 23.0;
+      const py = getTerrainElevation(px, pz) + 0.7;
+      const pylon = new THREE.Mesh(pylonGeo, pylonMat);
+      pylon.position.set(px, py, pz);
+      pylon.castShadow = true;
+      scene.add(pylon);
+    }
+
+    /* =========================================================================
+       4. OBSTACLES, BOULDERS & WAYPOINT SURVEY BEACONS
+       ========================================================================= */
     const obstacles = [];
-    const obstacleGeos = [
-      new THREE.DodecahedronGeometry(0.38, 1),
-      new THREE.DodecahedronGeometry(0.55, 1),
-      new THREE.BoxGeometry(0.8, 0.4, 0.8),
-      new THREE.CylinderGeometry(0.35, 0.45, 0.6, 7)
+    const rockGeos = [
+      new THREE.DodecahedronGeometry(0.40, 1),
+      new THREE.DodecahedronGeometry(0.60, 1),
+      new THREE.BoxGeometry(0.85, 0.55, 0.85),
+      new THREE.CylinderGeometry(0.40, 0.55, 0.70, 7)
     ];
 
     const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x475569,
-      roughness: 0.9,
-      metalness: 0.1,
+      color: 0x52525b,
+      roughness: 0.95,
+      metalness: 0.12,
       flatShading: true
     });
 
-    const rockPositions = [
-      { x: 0.0, z: 2.8, s: 1.1 },
-      { x: 1.8, z: 4.5, s: 1.3 },
-      { x: -2.2, z: 3.8, s: 1.0 },
-      { x: -0.8, z: 6.8, s: 1.4 },
-      { x: 2.5, z: 7.5, s: 1.2 },
-      { x: -3.0, z: 9.0, s: 1.5 },
-      { x: 1.0, z: 10.5, s: 1.3 },
-      { x: -1.5, z: 12.0, s: 1.2 },
-      { x: 3.2, z: 13.0, s: 1.6 },
-      { x: 0.0, z: 14.5, s: 1.4 },
-      { x: -3.5, z: 15.8, s: 1.2 },
-      { x: 2.0, z: 17.5, s: 1.5 },
-      { x: -1.0, z: 19.0, s: 1.3 },
-      // Side boundary barriers
-      { x: 5.5, z: 3.0, s: 1.8 }, { x: 5.5, z: 7.0, s: 1.8 }, { x: 5.5, z: 11.0, s: 1.8 }, { x: 5.5, z: 15.0, s: 1.8 },
-      { x: -5.5, z: 3.0, s: 1.8 }, { x: -5.5, z: 7.0, s: 1.8 }, { x: -5.5, z: 11.0, s: 1.8 }, { x: -5.5, z: 15.0, s: 1.8 }
+    // Curated obstacle placements creating natural challenges (slalom, canyon, dead-end trap)
+    const obstacleDefs = [
+      // Central test boulder
+      { x: 0.0, z: 4.0, s: 1.15, type: 0 },
+      // Slalom course (south quadrant)
+      { x: 2.2, z: 6.8, s: 1.35, type: 1 },
+      { x: -2.4, z: 8.5, s: 1.25, type: 2 },
+      { x: 1.6, z: 11.2, s: 1.45, type: 0 },
+      { x: -2.0, z: 13.8, s: 1.30, type: 3 },
+      { x: 0.0, z: 16.5, s: 1.50, type: 1 },
+
+      // Narrow Canyon Gate (east quadrant, x ~ 7)
+      { x: 6.8, z: 1.8, s: 1.60, type: 1 },
+      { x: 7.2, z: -1.8, s: 1.60, type: 2 },
+
+      // Dead-End U-Trap (southwest quadrant, x ~ -8, z ~ 4)
+      { x: -8.0, z: 2.2, s: 1.50, type: 1 },
+      { x: -9.5, z: 4.5, s: 1.50, type: 0 },
+      { x: -6.5, z: 4.5, s: 1.50, type: 2 },
+      { x: -8.0, z: 6.2, s: 1.60, type: 1 }, // back wall of trap
+
+      // Ramp boulders (northwest quadrant)
+      { x: -7.5, z: 9.8, s: 1.20, type: 0 },
+      { x: -5.0, z: 8.0, s: 1.30, type: 3 },
+
+      // North & East scattered landscape boulders
+      { x: 3.5, z: -6.0, s: 1.40, type: 1 },
+      { x: -3.0, z: -7.5, s: 1.35, type: 2 },
+      { x: 0.5, z: -10.0, s: 1.50, type: 0 },
+      { x: 8.5, z: 10.0, s: 1.40, type: 1 },
+      { x: -12.0, z: -3.0, s: 1.70, type: 0 },
+      { x: 12.0, z: -8.0, s: 1.60, type: 2 }
     ];
 
-    rockPositions.forEach((p, idx) => {
-      const geo = obstacleGeos[idx % obstacleGeos.length];
-      const rock = new THREE.Mesh(geo, rockMat);
-      rock.position.set(p.x, 0.25 * p.s, p.z);
-      rock.scale.set(p.s, p.s * (0.8 + Math.random() * 0.4), p.s);
-      rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-      rock.castShadow = true;
-      rock.receiveShadow = true;
-      scene.add(rock);
+    obstacleDefs.forEach((obs, idx) => {
+      const geo = rockGeos[obs.type % rockGeos.length];
+      const mesh = new THREE.Mesh(geo, rockMat);
+      const groundY = getTerrainElevation(obs.x, obs.z);
+      mesh.position.set(obs.x, groundY + 0.22 * obs.s, obs.z);
+      mesh.scale.set(obs.s, obs.s * (0.85 + Math.random() * 0.3), obs.s);
+      mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+
       obstacles.push({
-        mesh: rock,
-        x: p.x,
-        z: p.z,
-        radius: 0.45 * p.s
+        mesh: mesh,
+        x: obs.x,
+        z: obs.z,
+        radius: 0.48 * obs.s,
+        height: 0.65 * obs.s
       });
     });
 
+    // Waypoint Survey Beacons (for Waypoint Patrol test scenario)
+    const waypoints = [
+      { name: "Alpha", x: 0.0, z: 3.5, label: "WP-1 Alpha" },
+      { name: "Bravo", x: 5.5, z: 6.5, label: "WP-2 Bravo" },
+      { name: "Charlie", x: -6.0, z: 8.0, label: "WP-3 Charlie" },
+      { name: "Delta", x: 0.0, z: -5.0, label: "WP-4 Delta" }
+    ];
+
+    const waypointMeshes = [];
+    const wpBeaconGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.2, 12);
+    const wpBeaconMat = new THREE.MeshStandardMaterial({
+      color: 0x00d2ff,
+      emissive: 0x005577,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+
+    waypoints.forEach((wp, idx) => {
+      const wpGroup = new THREE.Group();
+      const gy = getTerrainElevation(wp.x, wp.z);
+      wpGroup.position.set(wp.x, gy, wp.z);
+
+      const beacon = new THREE.Mesh(wpBeaconGeo, wpBeaconMat);
+      beacon.position.y = 0.6;
+      beacon.castShadow = true;
+      wpGroup.add(beacon);
+
+      // Glowing top ring
+      const ringGeo = new THREE.TorusGeometry(0.25, 0.04, 8, 24);
+      ringGeo.rotateX(Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = 1.15;
+      wpGroup.add(ring);
+
+      scene.add(wpGroup);
+      waypointMeshes.push({ group: wpGroup, ring: ring, data: wp });
+    });
+
     /* =========================================================================
-       ROVER 3D MODEL HIERARCHY
+       5. ROVER 3D MODEL HIERARCHY WITH REAL SUSPENSION ARTICULATION
        ========================================================================= */
     const roverGroup = new THREE.Group();
     scene.add(roverGroup);
 
-    // Chassis specs: 0.50m (L) x 0.30m (W) x 0.15m (H)
-    const chassisGeo = new THREE.BoxGeometry(0.30, 0.15, 0.50);
+    // Rover geometry constants (matching Webots RoughTerrainRover.proto)
+    const CHASSIS_LENGTH = 0.50; // meters (X/Z)
+    const CHASSIS_WIDTH = 0.30;
+    const CHASSIS_HEIGHT = 0.15;
+    const WHEEL_RADIUS = 0.10;
+    const WHEEL_WIDTH = 0.06;
+    const WHEELBASE = 0.32;   // longitudinal distance between front and rear axles
+    const TRACK_WIDTH = 0.42; // lateral distance between left and right wheels
+
+    // Main Chassis Body
+    const chassisGeo = new THREE.BoxGeometry(CHASSIS_WIDTH, CHASSIS_HEIGHT, CHASSIS_LENGTH);
     const chassisMat = new THREE.MeshStandardMaterial({
       color: 0x1e293b,
-      metalness: 0.6,
-      roughness: 0.35
+      metalness: 0.65,
+      roughness: 0.32
     });
     const chassisMesh = new THREE.Mesh(chassisGeo, chassisMat);
-    chassisMesh.position.y = 0.20;
+    chassisMesh.position.y = 0.10; // offset relative to chassis center
     chassisMesh.castShadow = true;
     roverGroup.add(chassisMesh);
 
-    // Hazard yellow top stripes
-    const stripeGeo = new THREE.BoxGeometry(0.28, 0.02, 0.48);
-    const stripeMat = new THREE.MeshStandardMaterial({
+    // Top Hazard High-Vis Yellow Inspection Shield
+    const shieldGeo = new THREE.BoxGeometry(CHASSIS_WIDTH - 0.02, 0.025, CHASSIS_LENGTH - 0.02);
+    const shieldMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
-      roughness: 0.3,
-      metalness: 0.4
+      roughness: 0.28,
+      metalness: 0.45
     });
-    const stripeMesh = new THREE.Mesh(stripeGeo, stripeMat);
-    stripeMesh.position.y = 0.28;
-    stripeMesh.castShadow = true;
-    roverGroup.add(stripeMesh);
+    const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+    shieldMesh.position.y = 0.18;
+    shieldMesh.castShadow = true;
+    roverGroup.add(shieldMesh);
+
+    // Hazard Stripes Detail (black/yellow decal bars)
+    const hazardBarGeo = new THREE.BoxGeometry(CHASSIS_WIDTH * 0.9, 0.01, 0.06);
+    const hazardBarMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.6 });
+    [-0.14, 0.0, 0.14].forEach(zPos => {
+      const hBar = new THREE.Mesh(hazardBarGeo, hazardBarMat);
+      hBar.position.set(0, 0.195, zPos);
+      roverGroup.add(hBar);
+    });
 
     // Sensor Mast
-    const mastColumnGeo = new THREE.CylinderGeometry(0.018, 0.022, 0.24, 16);
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.2 });
-    const mastColumn = new THREE.Mesh(mastColumnGeo, metalMat);
-    mastColumn.position.set(0, 0.40, 0.10);
-    mastColumn.castShadow = true;
-    roverGroup.add(mastColumn);
+    const mastGeo = new THREE.CylinderGeometry(0.018, 0.022, 0.26, 16);
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.85, roughness: 0.18 });
+    const mastMesh = new THREE.Mesh(mastGeo, metalMat);
+    mastMesh.position.set(0, 0.31, 0.08);
+    mastMesh.castShadow = true;
+    roverGroup.add(mastMesh);
 
-    // Rotating LiDAR Scanner head
+    // Spinning LiDAR Head
     const lidarHeadGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.05, 16);
-    const lidarHeadMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
+    const lidarHeadMat = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.9, roughness: 0.2 });
     const lidarHead = new THREE.Mesh(lidarHeadGeo, lidarHeadMat);
-    lidarHead.position.set(0, 0.53, 0.10);
+    lidarHead.position.set(0, 0.45, 0.08);
     lidarHead.castShadow = true;
     roverGroup.add(lidarHead);
 
-    // Dual Stereo Cameras on mast
-    const camHousingGeo = new THREE.BoxGeometry(0.09, 0.035, 0.04);
-    const camHousing = new THREE.Mesh(camHousingGeo, metalMat);
-    camHousing.position.set(0, 0.46, 0.12);
-    roverGroup.add(camHousing);
+    // Dual Stereo Cameras
+    const stereoCamGeo = new THREE.BoxGeometry(0.09, 0.035, 0.04);
+    const stereoCam = new THREE.Mesh(stereoCamGeo, metalMat);
+    stereoCam.position.set(0, 0.38, 0.11);
+    roverGroup.add(stereoCam);
 
-    // 4 Wheels: Rims & Tires (0.10m radius, 0.06m width)
-    const wheelGeo = new THREE.CylinderGeometry(0.10, 0.10, 0.06, 24);
+    // Front Distance Sensor Pod (houses the 3 distance sensor optics)
+    const sensorPodGeo = new THREE.BoxGeometry(0.24, 0.04, 0.05);
+    const sensorPodMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
+    const sensorPod = new THREE.Mesh(sensorPodGeo, sensorPodMat);
+    sensorPod.position.set(0, 0.09, 0.26);
+    roverGroup.add(sensorPod);
+
+    // 4 Wheels with Individual Suspension Rocker Arm Articulation
+    const wheelGeo = new THREE.CylinderGeometry(WHEEL_RADIUS, WHEEL_RADIUS, WHEEL_WIDTH, 24);
     wheelGeo.rotateZ(Math.PI / 2);
+
     const tireMat = new THREE.MeshStandardMaterial({
       color: 0x0f172a,
-      roughness: 0.9,
-      metalness: 0.1
+      roughness: 0.95,
+      metalness: 0.05
     });
     const rimMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
-      roughness: 0.4,
-      metalness: 0.6
+      roughness: 0.35,
+      metalness: 0.65
     });
 
-    const wheels = [];
-    const wheelOffsets = [
-      { name: 'FL', x: -0.21, y: 0.10, z: 0.16 },
-      { name: 'FR', x:  0.21, y: 0.10, z: 0.16 },
-      { name: 'RL', x: -0.21, y: 0.10, z: -0.16 },
-      { name: 'RR', x:  0.21, y: 0.10, z: -0.16 }
+    // Wheel definitions (offsets relative to chassis center)
+    const wheelConfigs = [
+      { id: 'FL', localX: -TRACK_WIDTH / 2, localZ:  WHEELBASE / 2, isLeft: true },
+      { id: 'FR', localX:  TRACK_WIDTH / 2, localZ:  WHEELBASE / 2, isLeft: false },
+      { id: 'RL', localX: -TRACK_WIDTH / 2, localZ: -WHEELBASE / 2, isLeft: true },
+      { id: 'RR', localX:  TRACK_WIDTH / 2, localZ: -WHEELBASE / 2, isLeft: false }
     ];
 
-    wheelOffsets.forEach(cfg => {
-      const wheelGroup = new THREE.Group();
-      wheelGroup.position.set(cfg.x, cfg.y, cfg.z);
+    const wheels = [];
 
-      const tire = new THREE.Mesh(wheelGeo, tireMat);
-      tire.castShadow = true;
-      wheelGroup.add(tire);
+    wheelConfigs.forEach(cfg => {
+      // Suspension Arm / Link Group
+      const suspensionGroup = new THREE.Group();
+      suspensionGroup.position.set(cfg.localX, 0, cfg.localZ);
+      roverGroup.add(suspensionGroup);
 
-      const rimGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.064, 12);
+      // Rotating Wheel Assembly (spins as rover rolls)
+      const tireMesh = new THREE.Mesh(wheelGeo, tireMat);
+      tireMesh.castShadow = true;
+      suspensionGroup.add(tireMesh);
+
+      // Yellow Center Rim
+      const rimGeo = new THREE.CylinderGeometry(0.06, 0.06, WHEEL_WIDTH + 0.005, 12);
       rimGeo.rotateZ(Math.PI / 2);
-      const rim = new THREE.Mesh(rimGeo, rimMat);
-      wheelGroup.add(rim);
+      const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+      tireMesh.add(rimMesh);
 
-      roverGroup.add(wheelGroup);
-      wheels.push({ group: wheelGroup, name: cfg.name, tireMesh: tire });
+      // Suspension connector rod
+      const rodGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.12, 8);
+      rodGeo.rotateZ(cfg.isLeft ? -Math.PI / 6 : Math.PI / 6);
+      const rodMesh = new THREE.Mesh(rodGeo, metalMat);
+      rodMesh.position.set(cfg.isLeft ? 0.03 : -0.03, 0.05, 0);
+      suspensionGroup.add(rodMesh);
+
+      wheels.push({
+        id: cfg.id,
+        group: suspensionGroup,
+        tireMesh: tireMesh,
+        localX: cfg.localX,
+        localZ: cfg.localZ,
+        isLeft: cfg.isLeft,
+        groundY: 0,
+        contact: true,
+        rotAngle: 0,
+        angularVelocity: 0
+      });
     });
 
-    // Sensor Ray Beams (Left, Center, Right)
+    // Sensor Ray Beams (Left +28°, Center 0°, Right -28°)
     const sensorRaysGroup = new THREE.Group();
     roverGroup.add(sensorRaysGroup);
 
-    function createSensorRay(angleY) {
-      const rayLen = 2.0; // 2.0 meters max range
-      const rayGeo = new THREE.CylinderGeometry(0.005, 0.015, rayLen, 8);
+    function createSensorRayVisual(angleY) {
+      const maxRange = 2.5; // 2.5m range
+      const rayGeo = new THREE.CylinderGeometry(0.004, 0.014, maxRange, 8);
       rayGeo.rotateX(Math.PI / 2);
-      rayGeo.translate(0, 0, rayLen / 2);
+      rayGeo.translate(0, 0, maxRange / 2);
 
       const rayMat = new THREE.MeshBasicMaterial({
         color: 0x00d2ff,
         transparent: true,
-        opacity: 0.45,
-        wireframe: false
+        opacity: 0.45
       });
       const rayMesh = new THREE.Mesh(rayGeo, rayMat);
-      rayMesh.position.set(0, 0.20, 0.25);
+      rayMesh.position.set(0, 0.09, 0.27);
       rayMesh.rotation.y = angleY;
       sensorRaysGroup.add(rayMesh);
       return { mesh: rayMesh, mat: rayMat, angle: angleY };
     }
 
     const sensorRays = {
-      left: createSensorRay(0.436),   // +25 deg
-      center: createSensorRay(0.0),    // 0 deg
-      right: createSensorRay(-0.436)  // -25 deg
+      left: createSensorRayVisual(0.488),   // +28 deg
+      center: createSensorRayVisual(0.0),    // 0 deg
+      right: createSensorRayVisual(-0.488)  // -28 deg
     };
 
     /* =========================================================================
-       ROVER SIMULATION DYNAMICS & PYTHON FSM LOGIC
+       6. ROVER KINEMATICS, DIFFERENTIAL DRIVE & GROUND COLLISION PHYSICS
        ========================================================================= */
     const rover = {
-      x: 0,
-      z: 0,
-      heading: 0, // radians
-      linearSpeed: 0,
-      angularSpeed: 0,
-      state: 'FORWARD',
+      // Global World Coordinates
+      x: 0.0,
+      z: 0.0,
+      y: 0.10,
+      heading: 0.0, // Yaw in radians (0 = forward +Z)
+      pitch: 0.0,   // Radians
+      roll: 0.0,    // Radians
+
+      // Dynamic Velocities
+      linearVelocity: 0.0,  // m/s
+      angularVelocity: 0.0, // rad/s
+      targetLinear: 0.0,
+      targetAngular: 0.0,
+
+      // Limits & Tuned Acceleration (Independent of framerate)
+      maxSpeed: 0.65,        // m/s
+      maxAngularSpeed: 1.8,  // rad/s
+      accelRate: 1.4,        // m/s²
+      decelRate: 2.2,        // m/s²
+      brakeRate: 4.5,        // m/s²
+      turnAccel: 4.5,        // rad/s²
+
+      // Autonomous State & Decision Memory
+      state: 'FORWARD_CRUISE',
       autonomous: true,
       cameraMode: 'chase',
+      turnCommitTimer: 0.0,
       turnDirection: 'left',
-      turnTimer: 0,
-      reverseTimer: 0,
-      recoverTimer: 0,
-      // Distances in meters
-      distLeft: 2.0,
-      distCenter: 2.0,
-      distRight: 2.0,
-      // Wheel velocities (rad/s)
-      wFL: 0, wFR: 0, wRL: 0, wRR: 0,
-      // Keys state
-      keys: { w: false, a: false, s: false, d: false }
+      reverseTimer: 0.0,
+      stuckTimer: 0.0,
+      lastDisplacementPos: new THREE.Vector2(0, 0),
+      stuckCheckInterval: 0.0,
+      currentWaypointIdx: 0,
+
+      // Distance sensor readings (meters)
+      distLeft: 2.5,
+      distCenter: 2.5,
+      distRight: 2.5,
+
+      // Throttle multiplier
+      throttleScale: 0.8,
+
+      // Key States
+      keys: { w: false, a: false, s: false, d: false, space: false }
     };
 
-    // Sensor Lookup Table (from Webots RoughTerrainRover.proto)
-    // distance -> ADC signal
+    // Webots calibrated ADC signal lookup table conversion
     function distToADC(dist) {
-      const clamped = Math.max(0, Math.min(2.0, dist));
+      const clamped = Math.max(0.0, Math.min(2.5, dist));
       if (clamped <= 0.3) {
-        return Math.round(1000 - (clamped / 0.3) * (1000 - 850));
+        return Math.round(1000 - (clamped / 0.3) * 150);
       } else if (clamped <= 1.0) {
-        return Math.round(850 - ((clamped - 0.3) / 0.7) * (850 - 500));
-      } else {
+        return Math.round(850 - ((clamped - 0.3) / 0.7) * 350);
+      } else if (clamped <= 2.0) {
         return Math.round(500 - ((clamped - 1.0) / 1.0) * 500);
+      } else {
+        return 0;
       }
     }
 
-    // Raycast distance from sensor to obstacles
+    // Accurate Raycast Distance Measurement against Boulders & Steep Slopes
     function measureDistance(sensorAngle) {
       const totalAngle = rover.heading + sensorAngle;
-      const originX = rover.x + Math.sin(rover.heading) * 0.25;
-      const originZ = rover.z + Math.cos(rover.heading) * 0.25;
+      const originX = rover.x + Math.sin(rover.heading) * 0.28;
+      const originZ = rover.z + Math.cos(rover.heading) * 0.28;
       const dirX = Math.sin(totalAngle);
       const dirZ = Math.cos(totalAngle);
 
-      let minDistance = 2.0; // max sensor range 2.0m
+      let minDistance = 2.5; // Max sensor range
 
+      // Check all solid obstacles
       obstacles.forEach(obs => {
-        // Line-circle intersection
         const dx = obs.x - originX;
         const dz = obs.z - originZ;
         const proj = dx * dirX + dz * dirZ;
@@ -1088,160 +1488,355 @@
         }
       });
 
+      // Check steep terrain ridge ahead (slope steepness obstacle sensing)
+      for (let step = 0.4; step <= 2.5; step += 0.3) {
+        const sampleX = originX + dirX * step;
+        const sampleZ = originZ + dirZ * step;
+        const sampleH = getTerrainElevation(sampleX, sampleZ);
+        if (sampleH - rover.y > 0.45) { // impassable steep berm or wall
+          if (step < minDistance) minDistance = step;
+          break;
+        }
+      }
+
       return minDistance;
     }
 
-    // FSM Update (matches Python rough_terrain_controller.py)
-    const MAX_SPEED = 6.0; // rad/s
-    const TURN_SPEED = 4.2;
-    const OBSTACLE_THRESHOLD = 0.38; // m
-    const CRITICAL_DISTANCE = 0.18;  // m
+    // Physical Solid Obstacle Collision & Slide Resolution
+    function resolveObstacleCollisions() {
+      const ROVER_COLLISION_RADIUS = 0.30;
+      obstacles.forEach(obs => {
+        const dx = rover.x - obs.x;
+        const dz = rover.z - obs.z;
+        const dist = Math.hypot(dx, dz);
+        const minDist = obs.radius + ROVER_COLLISION_RADIUS;
 
-    function updateFSM(dt) {
-      // 1. Measure sensor distances
-      rover.distLeft = measureDistance(0.436);
-      rover.distCenter = measureDistance(0.0);
-      rover.distRight = measureDistance(-0.436);
+        if (dist < minDist && dist > 0.001) {
+          // Push rover out along normal
+          const penetration = minDist - dist;
+          const nx = dx / dist;
+          const nz = dz / dist;
 
-      if (rover.autonomous) {
-        switch (rover.state) {
-          case 'FORWARD':
-            // Cruise forward
-            rover.linearSpeed = 0.38;
-            rover.angularSpeed = 0.0;
-            rover.wFL = MAX_SPEED; rover.wFR = MAX_SPEED;
-            rover.wRL = MAX_SPEED; rover.wRR = MAX_SPEED;
+          rover.x += nx * penetration;
+          rover.z += nz * penetration;
 
-            // Check obstacle triggers
-            if (rover.distCenter < CRITICAL_DISTANCE || rover.distLeft < CRITICAL_DISTANCE || rover.distRight < CRITICAL_DISTANCE) {
-              rover.state = 'REVERSE';
-              rover.reverseTimer = 1.4;
-              addLog(`[WARN] Critical proximity (<${CRITICAL_DISTANCE}m)! Reversing.`, 'danger');
-            } else if (rover.distCenter < OBSTACLE_THRESHOLD || rover.distLeft < OBSTACLE_THRESHOLD || rover.distRight < OBSTACLE_THRESHOLD) {
-              // Determine best direction to turn
-              if (rover.distLeft > rover.distRight) {
-                rover.state = 'TURN_LEFT';
-                rover.turnTimer = 0.9 + Math.random() * 0.4;
-                addLog(`[ACTION] Obstacle detected! Turning LEFT (clearance L=${rover.distLeft.toFixed(2)}m > R=${rover.distRight.toFixed(2)}m)`, 'warn');
-              } else {
-                rover.state = 'TURN_RIGHT';
-                rover.turnTimer = 0.9 + Math.random() * 0.4;
-                addLog(`[ACTION] Obstacle detected! Turning RIGHT (clearance R=${rover.distRight.toFixed(2)}m > L=${rover.distLeft.toFixed(2)}m)`, 'warn');
-              }
-            }
-            break;
-
-          case 'TURN_LEFT':
-            rover.linearSpeed = 0.05;
-            rover.angularSpeed = 1.6;
-            rover.wFL = -TURN_SPEED; rover.wRL = -TURN_SPEED;
-            rover.wFR =  TURN_SPEED; rover.wRR =  TURN_SPEED;
-            rover.turnTimer -= dt;
-            if (rover.turnTimer <= 0 && rover.distCenter > OBSTACLE_THRESHOLD) {
-              rover.state = 'FORWARD';
-              addLog(`[STATE] Path clear. Resuming FORWARD cruise.`, 'success');
-            }
-            break;
-
-          case 'TURN_RIGHT':
-            rover.linearSpeed = 0.05;
-            rover.angularSpeed = -1.6;
-            rover.wFL =  TURN_SPEED; rover.wRL =  TURN_SPEED;
-            rover.wFR = -TURN_SPEED; rover.wRR = -TURN_SPEED;
-            rover.turnTimer -= dt;
-            if (rover.turnTimer <= 0 && rover.distCenter > OBSTACLE_THRESHOLD) {
-              rover.state = 'FORWARD';
-              addLog(`[STATE] Path clear. Resuming FORWARD cruise.`, 'success');
-            }
-            break;
-
-          case 'REVERSE':
-            rover.linearSpeed = -0.25;
-            rover.angularSpeed = 0.3;
-            rover.wFL = -MAX_SPEED * 0.7; rover.wRL = -MAX_SPEED * 0.7;
-            rover.wFR = -MAX_SPEED * 0.7; rover.wRR = -MAX_SPEED * 0.7;
-            rover.reverseTimer -= dt;
-            if (rover.reverseTimer <= 0) {
-              rover.state = (rover.distLeft > rover.distRight) ? 'TURN_LEFT' : 'TURN_RIGHT';
-              rover.turnTimer = 1.0;
-              addLog(`[STATE] Reverse maneuver finished. Turning away.`, 'info');
-            }
-            break;
+          // Eliminate velocity along collision normal (sliding contact)
+          const dot = rover.linearVelocity * (Math.sin(rover.heading) * nx + Math.cos(rover.heading) * nz);
+          if (dot < 0) {
+            rover.linearVelocity *= 0.5; // absorb shock
+          }
         }
-      } else {
-        // Manual Teleoperation
-        let targetLin = 0;
-        let targetAng = 0;
-        if (rover.keys.w) targetLin += 0.40;
-        if (rover.keys.s) targetLin -= 0.30;
-        if (rover.keys.a) targetAng += 1.8;
-        if (rover.keys.d) targetAng -= 1.8;
-
-        rover.linearSpeed = targetLin;
-        rover.angularSpeed = targetAng;
-        rover.wFL = (targetLin * 15) - (targetAng * 2.5);
-        rover.wRL = rover.wFL;
-        rover.wFR = (targetLin * 15) + (targetAng * 2.5);
-        rover.wRR = rover.wFR;
-
-        rover.state = (targetLin > 0) ? 'MANUAL_FWD' : (targetLin < 0) ? 'MANUAL_REV' : (targetAng !== 0) ? 'MANUAL_STEER' : 'MANUAL_IDLE';
-      }
-
-      // Update Kinematic Position
-      rover.heading += rover.angularSpeed * dt;
-      rover.x += Math.sin(rover.heading) * rover.linearSpeed * dt;
-      rover.z += Math.cos(rover.heading) * rover.linearSpeed * dt;
-
-      // Soft clamp inside terrain area
-      rover.x = Math.max(-18, Math.min(18, rover.x));
-      rover.z = Math.max(-18, Math.min(18, rover.z));
-
-      // Update 3D Rover Model
-      roverGroup.position.x = rover.x;
-      roverGroup.position.z = rover.z;
-      roverGroup.rotation.y = rover.heading;
-
-      // Simulated IMU Pitch/Roll based on speed and undulations
-      const pitch = (rover.linearSpeed * 0.08 + Math.sin(rover.z * 0.8) * 0.04);
-      const roll = (rover.angularSpeed * -0.04 + Math.cos(rover.x * 0.8) * 0.03);
-      roverGroup.rotation.x = pitch;
-      roverGroup.rotation.z = roll;
-
-      // Rotate wheels
-      const wheelRotDelta = rover.linearSpeed * dt * 10;
-      wheels.forEach(w => {
-        w.tireMesh.rotation.x += wheelRotDelta;
       });
 
-      // Spin LiDAR
-      lidarHead.rotation.y += 0.15;
-
-      // Update visual sensor rays
-      updateRayVisuals();
+      // Boundary crater rim containment
+      const distFromOrigin = Math.hypot(rover.x, rover.z);
+      if (distFromOrigin > BOUNDARY_RADIUS) {
+        const pushBack = distFromOrigin - BOUNDARY_RADIUS;
+        rover.x -= (rover.x / distFromOrigin) * pushBack;
+        rover.z -= (rover.z / distFromOrigin) * pushBack;
+        rover.linearVelocity *= 0.2;
+      }
     }
 
-    function updateRayVisuals() {
-      const updateSingleRay = (rayObj, dist) => {
-        const scaleZ = dist / 2.0;
+    /* =========================================================================
+       7. 4-WHEEL GROUND CONTACT & CHASSIS ATTITUDE SOLVER
+       ========================================================================= */
+    function updateTerrainContactPhysics() {
+      const cosH = Math.cos(rover.heading);
+      const sinH = Math.sin(rover.heading);
+
+      // Compute exact world coordinates for all 4 wheels
+      let avgGroundY = 0;
+      const wheelWorldPositions = {};
+
+      wheels.forEach(w => {
+        // Transform local wheel offsets into world space
+        const wx = rover.x + (cosH * w.localX + sinH * w.localZ);
+        const wz = rover.z + (-sinH * w.localX + cosH * w.localZ);
+        const groundHeight = getTerrainElevation(wx, wz);
+
+        w.groundY = groundHeight;
+        avgGroundY += groundHeight;
+        wheelWorldPositions[w.id] = { x: wx, z: wz, y: groundHeight };
+      });
+
+      avgGroundY /= 4.0;
+
+      // Chassis rest height sits on top of wheel contact plane
+      const targetChassisY = avgGroundY + WHEEL_RADIUS;
+      rover.y = THREE.MathUtils.lerp(rover.y, targetChassisY, 0.45);
+
+      // Calculate True Pitch from Front vs Rear axle elevation
+      const frontAxleY = (wheelWorldPositions.FL.y + wheelWorldPositions.FR.y) / 2.0;
+      const rearAxleY  = (wheelWorldPositions.RL.y + wheelWorldPositions.RR.y) / 2.0;
+      const deltaLongitudinal = frontAxleY - rearAxleY;
+      const targetPitch = Math.atan2(deltaLongitudinal, WHEELBASE);
+
+      // Calculate True Roll from Right vs Left wheel elevation
+      const rightSideY = (wheelWorldPositions.FR.y + wheelWorldPositions.RR.y) / 2.0;
+      const leftSideY  = (wheelWorldPositions.FL.y + wheelWorldPositions.RL.y) / 2.0;
+      const deltaLateral = rightSideY - leftSideY;
+      const targetRoll = Math.atan2(deltaLateral, TRACK_WIDTH);
+
+      // Smooth dampening to avoid any camera jitter or popping
+      rover.pitch = THREE.MathUtils.lerp(rover.pitch, targetPitch, 0.35);
+      rover.roll  = THREE.MathUtils.lerp(rover.roll,  targetRoll,  0.35);
+
+      // Update Rover Model 3D Position & Orientation using Quaternions
+      roverGroup.position.set(rover.x, rover.y, rover.z);
+
+      const qHeading = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rover.heading);
+      const qPitch   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), rover.pitch);
+      const qRoll    = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -rover.roll);
+
+      roverGroup.quaternion.copy(qHeading).multiply(qPitch).multiply(qRoll);
+
+      // Suspension travel articulation: keeps all 4 wheels in exact contact with the ground!
+      wheels.forEach(w => {
+        const expectedYInChassis = (w.groundY + WHEEL_RADIUS) - rover.y;
+        // Clamp suspension travel within realistic physical spring bounds [-0.05m, +0.05m]
+        const clampedTravel = THREE.MathUtils.clamp(expectedYInChassis, -0.06, 0.06);
+        w.group.position.y = clampedTravel;
+
+        // Ground contact detection
+        w.contact = Math.abs(expectedYInChassis - clampedTravel) < 0.035;
+      });
+    }
+
+    /* =========================================================================
+       8. AUTONOMOUS OBSTACLE AVOIDANCE FSM CONTROLLER
+       ========================================================================= */
+    const THRESH_WARNING  = 0.65; // m (begin decelerating)
+    const THRESH_STOP     = 0.35; // m (stop and pivot turn)
+    const THRESH_CRITICAL = 0.18; // m (emergency reverse)
+
+    function updateAutonomousFSM(dt) {
+      // 1. Read distance sensors
+      rover.distLeft   = measureDistance(0.488);
+      rover.distCenter = measureDistance(0.0);
+      rover.distRight  = measureDistance(-0.488);
+
+      const minSensor = Math.min(rover.distLeft, rover.distCenter, rover.distRight);
+
+      // Anti-stuck progress monitor
+      rover.stuckCheckInterval += dt;
+      if (rover.stuckCheckInterval >= 1.5) {
+        rover.stuckCheckInterval = 0;
+        const currentPos = new THREE.Vector2(rover.x, rover.z);
+        const distMoved = currentPos.distanceTo(rover.lastDisplacementPos);
+        rover.lastDisplacementPos.copy(currentPos);
+
+        // If driving commanded but rover hasn't moved 0.08m over 1.5s -> STUCK!
+        if (Math.abs(rover.targetLinear) > 0.1 && distMoved < 0.08) {
+          rover.state = 'STUCK_RECOVERY';
+          rover.reverseTimer = 1.4;
+          rover.turnCommitTimer = 1.2;
+          addLog('[ALERT] Rover stuck detected! Initiating STUCK_RECOVERY maneuver.', 'danger');
+        }
+      }
+
+      // FSM Execution
+      switch (rover.state) {
+        case 'FORWARD_CRUISE':
+          if (minSensor < THRESH_CRITICAL) {
+            rover.state = 'EMERGENCY_REVERSE';
+            rover.reverseTimer = 1.5;
+            addLog(`[WARN] Critical proximity (<${THRESH_CRITICAL}m)! Emergency Reverse initiated.`, 'danger');
+          } else if (minSensor < THRESH_STOP) {
+            // Pick safest direction with hysteresis memory
+            rover.state = 'AVOIDANCE_TURN';
+            rover.turnDirection = (rover.distLeft > rover.distRight) ? 'left' : 'right';
+            rover.turnCommitTimer = 0.9 + Math.random() * 0.4;
+            addLog(`[ACTION] Obstacle at ${minSensor.toFixed(2)}m. Turning ${rover.turnDirection.toUpperCase()} (L=${rover.distLeft.toFixed(2)}m, R=${rover.distRight.toFixed(2)}m)`, 'warn');
+          } else if (minSensor < THRESH_WARNING) {
+            // Slow approach
+            rover.targetLinear = 0.22 * rover.throttleScale;
+            rover.targetAngular = (rover.distLeft > rover.distRight) ? 0.35 : -0.35;
+          } else {
+            // Full cruise
+            rover.targetLinear = rover.maxSpeed * rover.throttleScale;
+            rover.targetAngular = 0.0;
+          }
+          break;
+
+        case 'AVOIDANCE_TURN':
+          rover.targetLinear = 0.03; // small crawl
+          rover.targetAngular = (rover.turnDirection === 'left' ? 1.0 : -1.0) * rover.maxAngularSpeed;
+          rover.turnCommitTimer -= dt;
+
+          // Clear condition: commit timer expired AND front has ample clearance
+          if (rover.turnCommitTimer <= 0 && rover.distCenter > THRESH_STOP + 0.25) {
+            rover.state = 'FORWARD_CRUISE';
+            addLog('[STATE] Forward corridor clear. Resuming FORWARD_CRUISE.', 'success');
+          }
+          break;
+
+        case 'EMERGENCY_REVERSE':
+          rover.targetLinear = -rover.maxSpeed * 0.65;
+          rover.targetAngular = (rover.distLeft > rover.distRight) ? -0.4 : 0.4;
+          rover.reverseTimer -= dt;
+
+          if (rover.reverseTimer <= 0) {
+            rover.state = 'AVOIDANCE_TURN';
+            rover.turnDirection = (rover.distLeft > rover.distRight) ? 'left' : 'right';
+            rover.turnCommitTimer = 1.1;
+            addLog('[STATE] Reversal completed. Commencing orientation realignment.', 'info');
+          }
+          break;
+
+        case 'STUCK_RECOVERY':
+          // Multi-step rock unstick sequence
+          if (rover.reverseTimer > 0) {
+            rover.targetLinear = -rover.maxSpeed * 0.8;
+            rover.targetAngular = 0.5;
+            rover.reverseTimer -= dt;
+          } else if (rover.turnCommitTimer > 0) {
+            rover.targetLinear = 0.0;
+            rover.targetAngular = -rover.maxAngularSpeed;
+            rover.turnCommitTimer -= dt;
+          } else {
+            rover.state = 'FORWARD_CRUISE';
+            addLog('[STATE] Recovery sequence executed. Resuming normal operations.', 'success');
+          }
+          break;
+
+        case 'WAYPOINT_PATROL':
+          // Navigate to current waypoint
+          const currentWP = waypoints[rover.currentWaypointIdx];
+          const toWP_X = currentWP.x - rover.x;
+          const toWP_Z = currentWP.z - rover.z;
+          const distToWP = Math.hypot(toWP_X, toWP_Z);
+
+          if (distToWP < 0.65) {
+            addLog(`[WAYPOINT] Reached ${currentWP.label}! Proceeding to next beacon.`, 'success');
+            rover.currentWaypointIdx = (rover.currentWaypointIdx + 1) % waypoints.length;
+          } else if (minSensor < THRESH_STOP) {
+            rover.state = 'AVOIDANCE_TURN';
+            rover.turnDirection = (rover.distLeft > rover.distRight) ? 'left' : 'right';
+            rover.turnCommitTimer = 0.9;
+          } else {
+            // Steer towards target waypoint angle
+            const targetHeading = Math.atan2(toWP_X, toWP_Z);
+            let angleDiff = targetHeading - rover.heading;
+            // Wrap angle diff to [-PI, PI]
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+            rover.targetAngular = THREE.MathUtils.clamp(angleDiff * 2.5, -rover.maxAngularSpeed, rover.maxAngularSpeed);
+            rover.targetLinear = Math.cos(angleDiff) > 0.3 ? rover.maxSpeed * 0.85 * rover.throttleScale : 0.1;
+          }
+          break;
+      }
+    }
+
+    /* =========================================================================
+       9. MANUAL CONTROLS & DIFFERENTIAL DRIVE MOTOR INTEGRATION
+       ========================================================================= */
+    function updateManualControls() {
+      // 1. Read distances for sensor dashboard even in manual mode
+      rover.distLeft   = measureDistance(0.488);
+      rover.distCenter = measureDistance(0.0);
+      rover.distRight  = measureDistance(-0.488);
+
+      let cmdLinear = 0.0;
+      let cmdAngular = 0.0;
+
+      if (rover.keys.space) {
+        // Emergency Brake
+        rover.targetLinear = 0.0;
+        rover.targetAngular = 0.0;
+        rover.state = 'MANUAL_BRAKE';
+        return;
+      }
+
+      if (rover.keys.w) cmdLinear += rover.maxSpeed * rover.throttleScale;
+      if (rover.keys.s) cmdLinear -= (rover.maxSpeed * 0.6) * rover.throttleScale;
+      if (rover.keys.a) cmdAngular += rover.maxAngularSpeed;
+      if (rover.keys.d) cmdAngular -= rover.maxAngularSpeed;
+
+      rover.targetLinear = cmdLinear;
+      rover.targetAngular = cmdAngular;
+
+      rover.state = (cmdLinear > 0) ? 'MANUAL_FORWARD' :
+                    (cmdLinear < 0) ? 'MANUAL_REVERSE' :
+                    (cmdAngular !== 0) ? 'MANUAL_PIVOT' : 'MANUAL_IDLE';
+    }
+
+    function stepKinematics(dt) {
+      // Frame-rate independent smooth acceleration / deceleration
+      const accel = (Math.abs(rover.targetLinear) < Math.abs(rover.linearVelocity)) ? rover.decelRate : rover.accelRate;
+      rover.linearVelocity = THREE.MathUtils.damp(rover.linearVelocity, rover.targetLinear, accel, dt);
+      rover.angularVelocity = THREE.MathUtils.damp(rover.angularVelocity, rover.targetAngular, rover.turnAccel, dt);
+
+      // Differential Drive Kinematics Equations:
+      // v_left = v - (omega * track / 2)
+      // v_right = v + (omega * track / 2)
+      const vLeft  = rover.linearVelocity - (rover.angularVelocity * TRACK_WIDTH / 2.0);
+      const vRight = rover.linearVelocity + (rover.angularVelocity * TRACK_WIDTH / 2.0);
+
+      const wLeftRad  = vLeft / WHEEL_RADIUS;
+      const wRightRad = vRight / WHEEL_RADIUS;
+
+      // Update position
+      rover.heading += rover.angularVelocity * dt;
+      rover.x += Math.sin(rover.heading) * rover.linearVelocity * dt;
+      rover.z += Math.cos(rover.heading) * rover.linearVelocity * dt;
+
+      // Solid obstacle collisions
+      resolveObstacleCollisions();
+
+      // Terrain elevation & suspension physics
+      updateTerrainContactPhysics();
+
+      // Roll individual wheels proportional to true linear distance travelled
+      wheels.forEach(w => {
+        const wheelRadSpeed = w.isLeft ? wLeftRad : wRightRad;
+        w.angularVelocity = wheelRadSpeed;
+        w.rotAngle += wheelRadSpeed * dt;
+        w.tireMesh.rotation.x = w.rotAngle;
+      });
+
+      // Continuous LiDAR Scanner Rotation
+      lidarHead.rotation.y += 0.22;
+
+      // Animate Waypoint Beacons
+      waypointMeshes.forEach(wp => {
+        wp.ring.rotation.z += 0.03;
+      });
+
+      // Update sensor ray visual cues
+      updateSensorRayVisuals();
+    }
+
+    function updateSensorRayVisuals() {
+      const updateRay = (rayObj, dist) => {
+        const scaleZ = dist / 2.5;
         rayObj.mesh.scale.set(1, 1, scaleZ);
-        if (dist < OBSTACLE_THRESHOLD) {
-          rayObj.mat.color.setHex(0xef4444);
-          rayObj.mat.opacity = 0.8;
+        if (dist < THRESH_STOP) {
+          rayObj.mat.color.setHex(0xef4444); // Red danger
+          rayObj.mat.opacity = 0.85;
+        } else if (dist < THRESH_WARNING) {
+          rayObj.mat.color.setHex(0xf59e0b); // Yellow caution
+          rayObj.mat.opacity = 0.60;
         } else {
-          rayObj.mat.color.setHex(0x00d2ff);
+          rayObj.mat.color.setHex(0x00d2ff); // Cyan clear
           rayObj.mat.opacity = 0.35;
         }
       };
 
-      updateSingleRay(sensorRays.left, rover.distLeft);
-      updateSingleRay(sensorRays.center, rover.distCenter);
-      updateSingleRay(sensorRays.right, rover.distRight);
+      updateRay(sensorRays.left, rover.distLeft);
+      updateRay(sensorRays.center, rover.distCenter);
+      updateRay(sensorRays.right, rover.distRight);
     }
 
     /* =========================================================================
-       UI TELEMETRY BINDINGS & LOGGING
+       10. TELEMETRY DASHBOARD & UI UPDATES
        ========================================================================= */
     const fsmBadge = document.getElementById('fsm-badge');
+    const statusAlert = document.getElementById('status-alert');
+    const alertIcon = document.getElementById('alert-icon');
+    const alertText = document.getElementById('alert-text');
+
     const valDsLeft = document.getElementById('val-ds-left');
     const valDsCenter = document.getElementById('val-ds-center');
     const valDsRight = document.getElementById('val-ds-right');
@@ -1255,10 +1850,16 @@
     const valMotRR = document.getElementById('val-mot-rr');
     const valPitch = document.getElementById('val-pitch');
     const valRoll = document.getElementById('val-roll');
+    const valElev = document.getElementById('val-elev');
+    const valYaw = document.getElementById('val-yaw');
     const speedIndicator = document.getElementById('rover-speed-indicator');
 
+    const indFL = document.getElementById('ind-fl');
+    const indFR = document.getElementById('ind-fr');
+    const indRL = document.getElementById('ind-rl');
+    const indRR = document.getElementById('ind-rr');
+
     const logStream = document.getElementById('log-stream');
-    let lastLogTime = 0;
 
     function addLog(msg, type = 'info') {
       const now = performance.now() / 1000;
@@ -1275,81 +1876,129 @@
     }
 
     function updateHUD() {
-      // Badge styling
+      // Badge Styling
       fsmBadge.textContent = rover.state;
       fsmBadge.className = 'state-badge';
-      if (rover.state.includes('TURN') || rover.state.includes('AVOID')) {
+      if (rover.state.includes('AVOID') || rover.state.includes('WARN')) {
         fsmBadge.classList.add('state-avoiding');
-      } else if (rover.state.includes('REV') || rover.state.includes('STOP')) {
+      } else if (rover.state.includes('REV') || rover.state.includes('BRAKE')) {
         fsmBadge.classList.add('state-reverse');
+      } else if (rover.state.includes('RECOVERY') || rover.state.includes('STUCK')) {
+        fsmBadge.classList.add('state-recovery');
       }
 
-      // Sensor readouts
-      valDsLeft.textContent = `${rover.distLeft.toFixed(2)} m (${distToADC(rover.distLeft)} ADC)`;
+      // Dynamic Alert Banner
+      const pitchDeg = rover.pitch * (180 / Math.PI);
+      const rollDeg  = rover.roll * (180 / Math.PI);
+      const minSensor = Math.min(rover.distLeft, rover.distCenter, rover.distRight);
+
+      if (Math.abs(pitchDeg) > 22 || Math.abs(rollDeg) > 22) {
+        statusAlert.className = 'status-alert alert-danger';
+        alertIcon.textContent = '⚠️';
+        alertText.textContent = `Excessive Tilt! Pitch: ${pitchDeg.toFixed(1)}° Roll: ${rollDeg.toFixed(1)}°`;
+      } else if (minSensor < THRESH_STOP) {
+        statusAlert.className = 'status-alert alert-warn';
+        alertIcon.textContent = '🛑';
+        alertText.textContent = `Proximity Warning &bull; Obstacle at ${minSensor.toFixed(2)}m`;
+      } else {
+        statusAlert.className = 'status-alert';
+        alertIcon.textContent = '🟢';
+        alertText.textContent = 'Path Clear &bull; Nominal Terrain Traversal';
+      }
+
+      // Sensor Readouts
+      valDsLeft.textContent   = `${rover.distLeft.toFixed(2)} m (${distToADC(rover.distLeft)} ADC)`;
       valDsCenter.textContent = `${rover.distCenter.toFixed(2)} m (${distToADC(rover.distCenter)} ADC)`;
-      valDsRight.textContent = `${rover.distRight.toFixed(2)} m (${distToADC(rover.distRight)} ADC)`;
+      valDsRight.textContent  = `${rover.distRight.toFixed(2)} m (${distToADC(rover.distRight)} ADC)`;
 
-      barDsLeft.style.width = `${(rover.distLeft / 2.0) * 100}%`;
-      barDsCenter.style.width = `${(rover.distCenter / 2.0) * 100}%`;
-      barDsRight.style.width = `${(rover.distRight / 2.0) * 100}%`;
+      barDsLeft.style.width   = `${(rover.distLeft / 2.5) * 100}%`;
+      barDsCenter.style.width = `${(rover.distCenter / 2.5) * 100}%`;
+      barDsRight.style.width  = `${(rover.distRight / 2.5) * 100}%`;
 
-      barDsLeft.className = `progress-bar-fill ${rover.distLeft < OBSTACLE_THRESHOLD ? 'danger' : ''}`;
-      barDsCenter.className = `progress-bar-fill ${rover.distCenter < OBSTACLE_THRESHOLD ? 'danger' : ''}`;
-      barDsRight.className = `progress-bar-fill ${rover.distRight < OBSTACLE_THRESHOLD ? 'danger' : ''}`;
+      const setBarClass = (dist) => dist < THRESH_STOP ? 'danger' : dist < THRESH_WARNING ? 'warn' : '';
+      barDsLeft.className   = `progress-bar-fill ${setBarClass(rover.distLeft)}`;
+      barDsCenter.className = `progress-bar-fill ${setBarClass(rover.distCenter)}`;
+      barDsRight.className  = `progress-bar-fill ${setBarClass(rover.distRight)}`;
 
-      // Motor readouts
-      valMotFL.textContent = `${rover.wFL >= 0 ? '+' : ''}${rover.wFL.toFixed(1)} rad/s`;
-      valMotFR.textContent = `${rover.wFR >= 0 ? '+' : ''}${rover.wFR.toFixed(1)} rad/s`;
-      valMotRL.textContent = `${rover.wRL >= 0 ? '+' : ''}${rover.wRL.toFixed(1)} rad/s`;
-      valMotRR.textContent = `${rover.wRR >= 0 ? '+' : ''}${rover.wRR.toFixed(1)} rad/s`;
+      // Motor Speeds
+      valMotFL.textContent = `${wheels[0].angularVelocity >= 0 ? '+' : ''}${wheels[0].angularVelocity.toFixed(1)} rad/s`;
+      valMotFR.textContent = `${wheels[1].angularVelocity >= 0 ? '+' : ''}${wheels[1].angularVelocity.toFixed(1)} rad/s`;
+      valMotRL.textContent = `${wheels[2].angularVelocity >= 0 ? '+' : ''}${wheels[2].angularVelocity.toFixed(1)} rad/s`;
+      valMotRR.textContent = `${wheels[3].angularVelocity >= 0 ? '+' : ''}${wheels[3].angularVelocity.toFixed(1)} rad/s`;
 
-      speedIndicator.textContent = `${Math.abs(rover.linearSpeed).toFixed(2)} m/s`;
+      speedIndicator.textContent = `${Math.abs(rover.linearVelocity).toFixed(2)} m/s (${(Math.abs(rover.linearVelocity) * 3.6).toFixed(1)} km/h)`;
 
-      valPitch.textContent = `${(roverGroup.rotation.x * (180 / Math.PI)).toFixed(1)}°`;
-      valRoll.textContent = `${(roverGroup.rotation.z * (180 / Math.PI)).toFixed(1)}°`;
+      // Chassis Angles & Coordinates
+      valPitch.textContent = `${pitchDeg >= 0 ? '+' : ''}${pitchDeg.toFixed(1)}°`;
+      valRoll.textContent  = `${rollDeg >= 0 ? '+' : ''}${rollDeg.toFixed(1)}°`;
+      valElev.textContent  = `${rover.y.toFixed(2)} m`;
+
+      // Heading cardinal
+      let degYaw = (rover.heading * (180 / Math.PI)) % 360;
+      if (degYaw < 0) degYaw += 360;
+      const cardinals = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      const cardIdx = Math.round(degYaw / 45) % 8;
+      valYaw.textContent = `${Math.round(degYaw).toString().padStart(3, '0')}° ${cardinals[cardIdx]}`;
+
+      // Wheel contact status
+      indFL.className = `wheel-indicator ${wheels[0].contact ? 'grounded' : ''}`;
+      indFR.className = `wheel-indicator ${wheels[1].contact ? 'grounded' : ''}`;
+      indRL.className = `wheel-indicator ${wheels[2].contact ? 'grounded' : ''}`;
+      indRR.className = `wheel-indicator ${wheels[3].contact ? 'grounded' : ''}`;
     }
 
     /* =========================================================================
-       CAMERA SYSTEM
+       11. CAMERA SYSTEM & FOLLOW SMOOTHING
        ========================================================================= */
     const fpvReticle = document.getElementById('fpv-reticle');
 
-    function updateCamera() {
+    function updateCamera(dt) {
       if (rover.cameraMode === 'chase') {
         controls.enabled = false;
         fpvReticle.style.display = 'none';
-        const targetCamX = rover.x - Math.sin(rover.heading) * 1.8;
-        const targetCamZ = rover.z - Math.cos(rover.heading) * 1.8;
-        const targetCamY = 1.1;
+
+        // Calculate follow position relative to heading
+        const followDist = 2.0;
+        const followHeight = 1.05;
+        const targetCamX = rover.x - Math.sin(rover.heading) * followDist;
+        const targetCamZ = rover.z - Math.cos(rover.heading) * followDist;
+        const targetCamY = Math.max(getTerrainElevation(targetCamX, targetCamZ) + 0.35, rover.y + followHeight);
 
         camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.08);
-        camera.lookAt(rover.x, 0.35, rover.z);
+        camera.lookAt(rover.x, rover.y + 0.28, rover.z);
       } else if (rover.cameraMode === 'fpv') {
         controls.enabled = false;
         fpvReticle.style.display = 'block';
-        // Position camera inside mast
-        camera.position.set(rover.x, 0.48, rover.z);
+
+        // Mount camera inside mast head
+        const eyeX = rover.x + Math.sin(rover.heading) * 0.12;
+        const eyeZ = rover.z + Math.cos(rover.heading) * 0.12;
+        const eyeY = rover.y + 0.38;
+
+        camera.position.set(eyeX, eyeY, eyeZ);
+
+        // Look straight forward in chassis direction with pitch
+        const lookDist = 5.0;
         const lookTarget = new THREE.Vector3(
-          rover.x + Math.sin(rover.heading) * 4,
-          0.38,
-          rover.z + Math.cos(rover.heading) * 4
+          eyeX + Math.sin(rover.heading) * lookDist,
+          eyeY + Math.tan(-rover.pitch) * lookDist * 0.4,
+          eyeZ + Math.cos(rover.heading) * lookDist
         );
         camera.lookAt(lookTarget);
       } else if (rover.cameraMode === 'top') {
         controls.enabled = false;
         fpvReticle.style.display = 'none';
-        camera.position.set(rover.x, 10.0, rover.z);
-        camera.lookAt(rover.x, 0, rover.z);
+        camera.position.set(rover.x, rover.y + 11.0, rover.z);
+        camera.lookAt(rover.x, rover.y, rover.z);
       } else {
-        // Orbit Free View
+        // Orbit Free 360 View
         controls.enabled = true;
         fpvReticle.style.display = 'none';
-        controls.target.set(rover.x, 0.25, rover.z);
+        controls.target.set(rover.x, rover.y + 0.2, rover.z);
         controls.update();
       }
     }
 
-    // Camera Switch Buttons
     const camButtons = {
       chase: document.getElementById('cam-chase'),
       orbit: document.getElementById('cam-orbit'),
@@ -1363,7 +2012,7 @@
         camButtons[k].classList.toggle('active', k === mode);
       });
       if (mode === 'orbit') {
-        controls.target.set(rover.x, 0.25, rover.z);
+        controls.target.set(rover.x, rover.y + 0.2, rover.z);
       }
     }
 
@@ -1373,7 +2022,57 @@
     camButtons.top.addEventListener('click', () => setCameraMode('top'));
 
     /* =========================================================================
-       CONTROL MODE TOGGLES & INTERACTION
+       12. TEST SCENARIOS & REPEATABLE VALIDATION
+       ========================================================================= */
+    function loadScenario(type) {
+      addLog(`[SCENARIO] Activating Scenario: ${type.toUpperCase()}`, 'info');
+
+      switch (type) {
+        case 'open':
+          rover.x = 0; rover.z = 0; rover.heading = 0;
+          rover.state = 'FORWARD_CRUISE';
+          break;
+        case 'single_rock':
+          rover.x = 0.0; rover.z = 1.0; rover.heading = 0; // heading directly at boulder at z=4
+          rover.state = 'FORWARD_CRUISE';
+          break;
+        case 'slalom':
+          rover.x = 0.0; rover.z = 5.0; rover.heading = 0; // enter southern rock field
+          rover.state = 'FORWARD_CRUISE';
+          break;
+        case 'canyon':
+          rover.x = 4.0; rover.z = 0.0; rover.heading = Math.PI / 2; // point east toward canyon gate
+          rover.state = 'FORWARD_CRUISE';
+          break;
+        case 'ridge':
+          rover.x = -4.0; rover.z = 4.0; rover.heading = -Math.PI / 4; // climb towards ramp hill
+          rover.state = 'FORWARD_CRUISE';
+          break;
+        case 'trap':
+          rover.x = -8.0; rover.z = 3.5; rover.heading = 0; // placed inside U-trap facing back rock
+          rover.state = 'FORWARD_CRUISE';
+          break;
+        case 'patrol':
+          rover.x = 0.0; rover.z = 0.0; rover.heading = 0;
+          rover.currentWaypointIdx = 0;
+          rover.state = 'WAYPOINT_PATROL';
+          addLog('[SCENARIO] Waypoint inspection sequence engaged.', 'success');
+          break;
+      }
+
+      rover.linearVelocity = 0;
+      rover.angularVelocity = 0;
+      rover.targetLinear = 0;
+      rover.targetAngular = 0;
+      updateTerrainContactPhysics();
+    }
+
+    document.getElementById('scenario-selector').addEventListener('change', (e) => {
+      loadScenario(e.target.value);
+    });
+
+    /* =========================================================================
+       13. INTERACTIVE CONTROLS & EVENT LISTENERS
        ========================================================================= */
     const modeAutoBtn = document.getElementById('mode-auto');
     const modeManualBtn = document.getElementById('mode-manual');
@@ -1384,7 +2083,7 @@
       modeAutoBtn.classList.add('active');
       modeManualBtn.classList.remove('active');
       dpadControls.style.display = 'none';
-      rover.state = 'FORWARD';
+      rover.state = 'FORWARD_CRUISE';
       addLog('[MODE] Switched to Autonomous FSM Navigation.', 'info');
     });
 
@@ -1397,32 +2096,82 @@
       addLog('[MODE] Switched to Manual Teleoperation (WASD / D-Pad).', 'warn');
     });
 
-    // Reset Position
-    document.getElementById('btn-reset-rover').addEventListener('click', () => {
-      rover.x = 0;
-      rover.z = 0;
-      rover.heading = 0;
-      rover.linearSpeed = 0;
-      rover.angularSpeed = 0;
-      rover.state = rover.autonomous ? 'FORWARD' : 'MANUAL_IDLE';
-      addLog('[RESET] Rover returned to coordinate origin (0, 0).', 'info');
+    // Speed Slider
+    const speedSlider = document.getElementById('speed-slider');
+    const speedSliderVal = document.getElementById('speed-slider-val');
+    speedSlider.addEventListener('input', (e) => {
+      rover.throttleScale = parseFloat(e.target.value);
+      speedSliderVal.textContent = `${rover.throttleScale.toFixed(1)}x`;
     });
+
+    // Reset Rover
+    document.getElementById('btn-reset-rover').addEventListener('click', () => {
+      rover.x = 0.0;
+      rover.z = 0.0;
+      rover.heading = 0.0;
+      rover.linearVelocity = 0.0;
+      rover.angularVelocity = 0.0;
+      rover.targetLinear = 0.0;
+      rover.targetAngular = 0.0;
+      rover.pitch = 0.0;
+      rover.roll = 0.0;
+      rover.state = rover.autonomous ? 'FORWARD_CRUISE' : 'MANUAL_IDLE';
+      updateTerrainContactPhysics();
+      addLog('[RESET] Rover returned to origin (0, 0) on flat pad.', 'info');
+    });
+
+    // Unstick / Recover Button
+    document.getElementById('btn-unstick').addEventListener('click', () => {
+      rover.linearVelocity = 0;
+      rover.angularVelocity = 0;
+      rover.targetLinear = 0;
+      rover.targetAngular = 0;
+      // Lift slightly and align upright
+      rover.pitch = 0;
+      rover.roll = 0;
+      rover.y = getTerrainElevation(rover.x, rover.z) + WHEEL_RADIUS + 0.08;
+      updateTerrainContactPhysics();
+      addLog('[RECOVER] Applied chassis re-leveling and suspension unstick.', 'success');
+    });
+
+    // Brake Button
+    const brakeBtn = document.getElementById('btn-brake');
+    brakeBtn.addEventListener('mousedown', () => { rover.keys.space = true; });
+    brakeBtn.addEventListener('mouseup', () => { rover.keys.space = false; });
 
     // Toggle Sensor Rays
     let raysVisible = true;
     document.getElementById('btn-toggle-rays').addEventListener('click', () => {
       raysVisible = !raysVisible;
       sensorRaysGroup.visible = raysVisible;
-      addLog(`[SENSORS] Distance ray beams visibility: ${raysVisible ? 'ON' : 'OFF'}`);
+      addLog(`[SENSORS] Distance ray visualization: ${raysVisible ? 'ON' : 'OFF'}`);
     });
 
-    // Keyboard handlers
+    // Clear Logs
+    document.getElementById('btn-clear-logs').addEventListener('click', () => {
+      logStream.innerHTML = '';
+      addLog('[SYSTEM] Log cleared.');
+    });
+
+    // Minimize Log Panel
+    const logPanel = document.getElementById('log-panel');
+    const btnToggleLogs = document.getElementById('btn-toggle-logs');
+    btnToggleLogs.addEventListener('click', () => {
+      logPanel.classList.toggle('collapsed');
+      btnToggleLogs.textContent = logPanel.classList.contains('collapsed') ? '[Expand]' : '[Minimize]';
+    });
+
+    // Keyboard handlers (prevents browser scrolling when driving)
     window.addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase();
+      if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd', ' '].includes(k)) {
+        e.preventDefault();
+      }
       if (k === 'w' || k === 'arrowup') rover.keys.w = true;
       if (k === 'a' || k === 'arrowleft') rover.keys.a = true;
       if (k === 's' || k === 'arrowdown') rover.keys.s = true;
       if (k === 'd' || k === 'arrowright') rover.keys.d = true;
+      if (k === ' ' || k === 'spacebar') rover.keys.space = true;
     });
 
     window.addEventListener('keyup', (e) => {
@@ -1431,24 +2180,25 @@
       if (k === 'a' || k === 'arrowleft') rover.keys.a = false;
       if (k === 's' || k === 'arrowdown') rover.keys.s = false;
       if (k === 'd' || k === 'arrowright') rover.keys.d = false;
+      if (k === ' ' || k === 'spacebar') rover.keys.space = false;
     });
 
-    // D-Pad handlers
-    const setupDpadBtn = (id, key) => {
+    // Touch / Mouse D-Pad handlers
+    const setupDpad = (id, key) => {
       const el = document.getElementById(id);
-      const start = (e) => { e.preventDefault(); rover.keys[key] = true; };
-      const stop = (e) => { e.preventDefault(); rover.keys[key] = false; };
-      el.addEventListener('mousedown', start);
-      el.addEventListener('mouseup', stop);
-      el.addEventListener('mouseleave', stop);
-      el.addEventListener('touchstart', start);
-      el.addEventListener('touchend', stop);
+      const press = (ev) => { ev.preventDefault(); rover.keys[key] = true; };
+      const release = (ev) => { ev.preventDefault(); rover.keys[key] = false; };
+      el.addEventListener('mousedown', press);
+      el.addEventListener('mouseup', release);
+      el.addEventListener('mouseleave', release);
+      el.addEventListener('touchstart', press);
+      el.addEventListener('touchend', release);
     };
 
-    setupDpadBtn('dpad-up', 'w');
-    setupDpadBtn('dpad-down', 's');
-    setupDpadBtn('dpad-left', 'a');
-    setupDpadBtn('dpad-right', 'd');
+    setupDpad('dpad-up', 'w');
+    setupDpad('dpad-down', 's');
+    setupDpad('dpad-left', 'a');
+    setupDpad('dpad-right', 'd');
 
     // Resize handler
     window.addEventListener('resize', () => {
@@ -1458,7 +2208,7 @@
     });
 
     /* =========================================================================
-       FILE INSPECTOR MODAL & SOURCE CODE PREVIEWS
+       14. SOURCE CODE INSPECTOR MODAL
        ========================================================================= */
     const filesModal = document.getElementById('files-modal');
     const btnOpenFiles = document.getElementById('btn-open-files');
@@ -1506,22 +2256,30 @@
     }
 
     /* =========================================================================
-       MAIN ANIMATION LOOP
+       15. MAIN SIMULATION LOOP (60 FPS)
        ========================================================================= */
-    let lastTime = performance.now();
+    let lastTimestamp = performance.now();
 
-    function animate(currentTime) {
+    function animate(now) {
       requestAnimationFrame(animate);
-      const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
-      lastTime = currentTime;
+      const dt = Math.min((now - lastTimestamp) / 1000, 0.08); // clamp frame delta
+      lastTimestamp = now;
 
-      updateFSM(dt);
+      if (rover.autonomous) {
+        updateAutonomousFSM(dt);
+      } else {
+        updateManualControls();
+      }
+
+      stepKinematics(dt);
       updateHUD();
-      updateCamera();
+      updateCamera(dt);
 
       renderer.render(scene, camera);
     }
 
+    // Initialize rover on terrain ground
+    updateTerrainContactPhysics();
     requestAnimationFrame(animate);
   </script>
 </body>
